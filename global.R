@@ -15,21 +15,22 @@ library(shinyalert)
 library(shinyBS)
 library(bslib)
 
-con_string <- "Driver={ODBC Driver 18 for SQL Server};
+con_string <- "Driver={__DRIVER__};
 Server=tcp:kanden.database.windows.net,1433;
 Database=set_daily;
 Uid=__USER__;
 Pwd=__PASSWD__;
 Encrypt=yes;
-TrustServerCertificate=no;
-Connection Timeout=60;"
+TrustServerCertificate=yes;
+Connection Timeout=1000;"
 
 connect <- function(){
   con <- DBI::dbConnect(
     odbc::odbc(),
     .connection_string = con_string %>% 
-      stringi::stri_replace_all(fixed = "__USER__", Sys.getenv("azure_user")) %>% 
-      stringi::stri_replace_all(fixed = "__PASSWD__", Sys.getenv("azure_pwd")) 
+      stringi::stri_replace_all(fixed = "__USER__", config::get("azure_user")) %>% 
+      stringi::stri_replace_all(fixed = "__PASSWD__", config::get("azure_pwd")) %>% 
+      stringi::stri_replace_all(fixed = "__DRIVER__", config::get("driver"))
   )
 }
 
