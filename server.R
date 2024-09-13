@@ -3,23 +3,23 @@ server <- function(input, output) {
     completion_times = completion_times,
     players = players
   )
-  
+
   daily_results <- reactive({
     daily_results <- players[completion_times, on = c(id = "player_id")][
       , ":="(id = NULL)
     ]
-    
+
     data.table::setnames(daily_results, "name", "player")
-    
+
     daily_results
   })
-  
-  
+
+
   ### DAILY RESULTS ----
 
   output$daily_results_table <- DT::renderDT(
     expr = {
-      dat <- daily_results() %>% 
+      dat <- daily_results() %>%
         mutate(time_sec = sapply(time_sec, seconds_to_string))
 
       dat <- data.table::dcast(dat,
@@ -110,13 +110,13 @@ server <- function(input, output) {
       }
     }
   })
-  
+
   #### remove record ----
-  
+
   shiny::observeEvent(input$remove_record, {
     date_input <- input$remove_record_date
     player_input <- input$remove_record_player
-    
+
     # check if player provided
     if (is.null(player_input)) {
       shinyalert::shinyalert(
@@ -126,52 +126,51 @@ server <- function(input, output) {
       )
     } else {
       player_id <- rv$players[name == player_input, id]
-      
-      
+
+
       query <- glue::glue("DELETE FROM completion_times WHERE date = '{date_input}'
                           AND player_id = {player_id}")
-          
+
       con <- connect()
-      
+
       sent <- DBI::dbSendQuery(con, query)
       DBI::dbClearResult(sent)
-      
+
       rv$completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") %>%
         as.data.table()
-      
+
       disconnect(con)
-      
+
       shinyalert::shinyalert(
         text = "Successfully removed record",
         type = "success"
       )
     }
   })
-  
+
   ### STATS ----
-  
+
   #### running avg 7 day  ----
-  
+
   output$stats_runavg_7day <- plotly::renderPlotly(
     expr = {
-      
       dat <- data.table::dcast(daily_results(),
-                               date ~ player,
-                               value.var = "time_sec"
+        date ~ player,
+        value.var = "time_sec"
       )
-      
-      
-      dat <- dat[order(date)][, ':='(cummean_hubert = frollmean(Hubert, n = 7, na.rm = TRUE),
-                 cummean_jula = frollmean(Jula, n = 7, na.rm = TRUE),
-                 cummean_oliwka = frollmean(Oliwka, n = 7, na.rm = TRUE))][
-                   , -c("Hubert", "Jula", "Oliwka")
-                 ] %>% 
-        rename("Hubert" = "cummean_hubert", "Jula" = "cummean_jula", "Oliwka" = "cummean_oliwka") %>% 
+
+
+      dat <- dat[order(date)][, ":="(cummean_hubert = frollmean(Hubert, n = 7, na.rm = TRUE),
+        cummean_jula = frollmean(Jula, n = 7, na.rm = TRUE),
+        cummean_oliwka = frollmean(Oliwka, n = 7, na.rm = TRUE))][
+        , -c("Hubert", "Jula", "Oliwka")
+      ] %>%
+        rename("Hubert" = "cummean_hubert", "Jula" = "cummean_jula", "Oliwka" = "cummean_oliwka") %>%
         pivot_longer(
           cols = c("Hubert", "Jula", "Oliwka"),
         )
-        
-      
+
+
       plotly::plot_ly(
         data = dat,
         x = ~date,
@@ -179,13 +178,13 @@ server <- function(input, output) {
         type = "scatter",
         mode = "lines",
         color = ~name,
-        text = ~sapply(value, seconds_to_string),
-        hoverinfo = 'text',
+        text = ~ sapply(value, seconds_to_string),
+        hoverinfo = "text",
         hovertemplate = "%{text}"
-      ) %>% 
+      ) %>%
         layout(
           title = "Rolling average (7 day)",
-          hovermode = 'x unified',
+          hovermode = "x unified",
           xaxis = list(
             title = "Date"
           ),
@@ -199,29 +198,28 @@ server <- function(input, output) {
         )
     }
   )
-  
+
   #### running avg 30 day  ----
-  
+
   output$stats_runavg_30day <- plotly::renderPlotly(
     expr = {
-      
       dat <- data.table::dcast(daily_results(),
-                               date ~ player,
-                               value.var = "time_sec"
+        date ~ player,
+        value.var = "time_sec"
       )
-      
-      
-      dat <- dat[order(date)][, ':='(cummean_hubert = frollmean(Hubert, n = 30, na.rm = TRUE),
-                                     cummean_jula = frollmean(Jula, n = 30, na.rm = TRUE),
-                                     cummean_oliwka = frollmean(Oliwka, n = 30, na.rm = TRUE))][
-                                       , -c("Hubert", "Jula", "Oliwka")
-                                     ] %>% 
-        rename("Hubert" = "cummean_hubert", "Jula" = "cummean_jula", "Oliwka" = "cummean_oliwka") %>% 
+
+
+      dat <- dat[order(date)][, ":="(cummean_hubert = frollmean(Hubert, n = 30, na.rm = TRUE),
+        cummean_jula = frollmean(Jula, n = 30, na.rm = TRUE),
+        cummean_oliwka = frollmean(Oliwka, n = 30, na.rm = TRUE))][
+        , -c("Hubert", "Jula", "Oliwka")
+      ] %>%
+        rename("Hubert" = "cummean_hubert", "Jula" = "cummean_jula", "Oliwka" = "cummean_oliwka") %>%
         pivot_longer(
           cols = c("Hubert", "Jula", "Oliwka"),
         )
-      
-      
+
+
       plotly::plot_ly(
         data = dat,
         x = ~date,
@@ -229,13 +227,13 @@ server <- function(input, output) {
         type = "scatter",
         mode = "lines",
         color = ~name,
-        text = ~sapply(value, seconds_to_string),
-        hoverinfo = 'text',
+        text = ~ sapply(value, seconds_to_string),
+        hoverinfo = "text",
         hovertemplate = "%{text}"
-      ) %>% 
+      ) %>%
         layout(
           title = "Rolling average (30 day)",
-          hovermode = 'x unified',
+          hovermode = "x unified",
           xaxis = list(
             title = "Date"
           ),
@@ -249,22 +247,22 @@ server <- function(input, output) {
         )
     }
   )
-  
+
   #### histogram  ----
-  
+
   output$stats_histogram <- plotly::renderPlotly(
     expr = {
       dat <- daily_results()
-      
+
       plotly::plot_ly(
         dat,
         x = ~time_sec,
         type = "histogram",
-        histnorm = 'probability',
+        histnorm = "probability",
         color = ~player,
         nbinsx = 30,
-        hoverinfo = 'skip'
-      ) %>% 
+        hoverinfo = "skip"
+      ) %>%
         layout(
           # barmode = 'overlay',
           title = "Completion Time Histogram",
@@ -275,35 +273,37 @@ server <- function(input, output) {
             ticktext = sapply(seq(0, 300, 30), seconds_to_string, ms = FALSE)
           ),
           yaxis = list(
-            title = "Prob"
+            title = "Frac"
           )
         )
     }
   )
-  
+
   #### weekday bar  ----
-  
+
   output$stats_weekdaybar <- plotly::renderPlotly(
     expr = {
       dat <- daily_results()
-      
-      dat <- dat[, .(mean_time = mean(time_sec)), by = .(day_of_week = weekdays(date), player)] 
-      
+
+      dat <- dat[, .(mean_time = mean(time_sec)), by = .(day_of_week = weekdays(date), player)]
+
       plotly::plot_ly(
         data = dat,
         x = ~day_of_week,
         y = ~mean_time,
         type = "bar",
         color = ~player,
-        text = ~sapply(mean_time, seconds_to_string),
-        hoverinfo = 'text',
+        text = ~ sapply(mean_time, seconds_to_string),
+        hoverinfo = "text",
         hovertemplate = "%{text}"
       ) %>% layout(
         title = "Mean time by day of week",
         xaxis = list(
           title = "Day of Week",
-          tickvals = c("Monday", "Tuesday", "Wednesday", "Thursday",
-                       "Friday", "Saturday", "Sunday")
+          tickvals = c(
+            "Monday", "Tuesday", "Wednesday", "Thursday",
+            "Friday", "Saturday", "Sunday"
+          )
         ),
         yaxis = list(
           title = "Time",
@@ -313,7 +313,63 @@ server <- function(input, output) {
       )
     }
   )
-  
-  
-  
+
+  #### top10 ----
+
+  output$stats_top10 <- DT::renderDT(
+    expr = {
+      dat <- daily_results()
+
+      dat <- dat[order(time_sec)][1:10, .(
+        Player = player,
+        Time = sapply(time_sec, seconds_to_string),
+        Date = date
+      )]
+
+      DT::datatable(
+        data = dat,
+        rownames = TRUE,
+        extensions = c("FixedHeader"),
+        options = list(
+          paging = FALSE,
+          dom = 't',
+          scrollY = "600px",
+          scrollCollapse = TRUE,
+          scrollX = 200,
+          FixedHeader = TRUE
+        )
+      )
+    }
+  )
+
+
+  #### best, mean time by player ----
+
+  output$stats_besttimeplayer <- DT::renderDT(
+    expr = {
+      dat <- daily_results()
+
+      dat <- dat[, .(
+        `Best Time` = seconds_to_string(min(time_sec)),
+        `Mean Time` = seconds_to_string(mean(time_sec)),
+        `Median Time` = seconds_to_string(median(time_sec))
+      ),
+      by = .(player)
+      ][order(player)]
+
+      DT::datatable(
+        data = dat,
+        rownames = NULL,
+        extensions = c("FixedHeader"),
+        options = list(
+          paging = FALSE,
+          dom = 't',
+          scrollY = "600px",
+          scrollCollapse = TRUE,
+          scrollX = 200,
+          FixedHeader = TRUE
+        )
+      )
+    }
+  )
 }
