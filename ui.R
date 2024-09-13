@@ -8,7 +8,6 @@ ui <- dashboardPage(
         tabName = "stats",
         icon = icon("chart-line")
       ),
-      
       shinydashboard::menuItem(
         text = "Daily results",
         tabName = "daily_results",
