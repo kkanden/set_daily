@@ -24,77 +24,84 @@ library(plotly)
 # Encrypt=yes;
 # TrustServerCertificate=yes;
 # Connection Timeout=1000;"
-# 
-# connect <- function(){
-#   con <- DBI::dbConnect(
-#     odbc::odbc(),
-#     .connection_string = con_string %>% 
-#       stringi::stri_replace_all(fixed = "__USER__", config::get("azure_user")) %>% 
-#       stringi::stri_replace_all(fixed = "__PASSWD__", config::get("azure_pwd")) %>% 
-#       stringi::stri_replace_all(fixed = "__DRIVER__", config::get("driver"))
-#   )
-# }
-# 
-# disconnect <- function(con){
-#   DBI::dbDisconnect(con)
-# }
-# 
-# con <- connect()
-# 
-# 
-# completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") %>% 
-#   as.data.table
-# 
-# 
-# players <- dbGetQuery(con, "SELECT * FROM players") %>% 
-#   as.data.table
-# 
-# disconnect(con)
 
-completion_times <- read_csv("completion_times.csv",
-                             show_col_types = FALSE) %>% as.data.table
+connect <- function(){
+  con <- DBI::dbConnect(RPostgres::Postgres(),
+                        host   = "kanden-kanden-b7d6.d.aivencloud.com",
+                        dbname = "defaultdb",
+                        user      = config::get("user"),
+                        password      = config::get("pwd"),
+                        port     = 13499)
+}
 
-players <- read_csv("players.csv",
-                    show_col_types = FALSE) %>% as.data.table
+disconnect <- function(con){
+  DBI::dbDisconnect(con)
+}
 
-seconds_to_string <- function(seconds, ms = TRUE){
-  if(is.na(seconds)){
+con <- connect()
+
+
+completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") %>%
+  as.data.table
+
+
+players <- dbGetQuery(con, "SELECT * FROM players") %>%
+  as.data.table
+
+disconnect(con)
+
+# completion_times <- read_csv("completion_times.csv",
+#   show_col_types = FALSE
+# ) %>% as.data.table()
+# 
+# players <- read_csv("players.csv",
+#   show_col_types = FALSE
+# ) %>% as.data.table()
+
+seconds_to_string <- function(seconds, ms = TRUE) {
+  if (is.na(seconds)) {
     return(NA)
   }
-  
+
   minutes <- as.integer(seconds / 60)
   secs <- as.integer(seconds %% 60)
   milliseconds <- as.integer((seconds - floor(seconds)) * 1000)
-  
+
   formatted_time <- ifelse(ms,
-                           sprintf("%d:%02d.%03d",
-                            minutes,
-                            secs,
-                            milliseconds),
-                           sprintf("%d:%02d",
-                                   minutes,
-                                   secs)
+    sprintf(
+      "%d:%02d.%03d",
+      minutes,
+      secs,
+      milliseconds
+    ),
+    sprintf(
+      "%d:%02d",
+      minutes,
+      secs
+    )
   )
   return(formatted_time)
 }
 
-string_to_seconds <- function(string){
+string_to_seconds <- function(string) {
   split <- stringi::stri_split(string, regex = "[:.]")[[1]]
-  
+
   mins <- as.integer(split[1])
   secs <- as.integer(split[2])
-  msecs <- fifelse(length(split) == 3,
-                   split[3],
-                   "0")
-  
-  msecs <- fcase(msecs == "0", 0L,
-                 nchar(msecs) == 1, as.integer(msecs) * 100L,
-                 nchar(msecs) == 2, as.integer(msecs) * 10L,
-                 nchar(msecs) == 3, as.integer(msecs)
-                 )
-  
-  
+  msecs <- fifelse(
+    length(split) == 3,
+    split[3],
+    "0"
+  )
+
+  msecs <- fcase(
+    msecs == "0", 0L,
+    nchar(msecs) == 1, as.integer(msecs) * 100L,
+    nchar(msecs) == 2, as.integer(msecs) * 10L,
+    nchar(msecs) == 3, as.integer(msecs)
+  )
+
+
   time_sec <- mins * 60 + secs + msecs / 1000
   return(time_sec)
 }
-
