@@ -5,7 +5,7 @@ server <- function(input, output) {
   )
 
   daily_results <- reactive({
-    daily_results <- players[completion_times, on = c(id = "player_id")][
+    daily_results <- rv$players[rv$completion_times, on = c(id = "player_id")][
       , ":="(id = NULL)
     ]
 
@@ -88,19 +88,31 @@ server <- function(input, output) {
         } else {
           time_sec <- string_to_seconds(time_input)
           player_id <- rv$players[name == player_input, id]
-
-          query <- glue::glue('INSERT INTO completion_times("date", "time_sec", "player_id")
-                             VALUES (\'{date_input}\', {time_sec}, {player_id})')
-
-          con <- connect()
-
-          sent <- DBI::dbSendQuery(con, query)
-          DBI::dbClearResult(sent)
-
-          rv$completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") %>%
-            as.data.table()
-
-          disconnect(con)
+          
+          # query <- glue::glue('INSERT INTO completion_times("date", "time_sec", "player_id")
+          #                    VALUES (\'{date_input}\', {time_sec}, {player_id})')
+          # 
+          # con <- connect()
+          # 
+          # sent <- DBI::dbSendQuery(con, query)
+          # DBI::dbClearResult(sent)
+          # 
+          # rv$completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") %>%
+          #   as.data.table()
+          # 
+          # disconnect(con)
+          
+          ## use csv (for the time being)
+          
+          
+          
+          completion_times <- data.table::rbindlist(list(rv$completion_times,
+                                                          list(date_input, time_sec, player_id)))
+          
+          rv$completion_times <- completion_times
+          
+          write_csv(completion_times, "completion_times.csv")
+          
 
           shinyalert::shinyalert(
             text = "Successfully added record",
@@ -125,21 +137,30 @@ server <- function(input, output) {
         timer = 5000
       )
     } else {
-      player_id <- rv$players[name == player_input, id]
+      player_id_input <- rv$players[name == player_input, id]
 
 
-      query <- glue::glue("DELETE FROM completion_times WHERE date = '{date_input}'
-                          AND player_id = {player_id}")
-
-      con <- connect()
-
-      sent <- DBI::dbSendQuery(con, query)
-      DBI::dbClearResult(sent)
-
-      rv$completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") %>%
-        as.data.table()
-
-      disconnect(con)
+      # query <- glue::glue("DELETE FROM completion_times WHERE date = '{date_input}'
+      #                     AND player_id = {player_id_input}")
+      # 
+      # con <- connect()
+      # 
+      # sent <- DBI::dbSendQuery(con, query)
+      # DBI::dbClearResult(sent)
+      # 
+      # rv$completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") %>%
+      #   as.data.table()
+      # 
+      # disconnect(con)
+      
+      ## use csv (for the time being)
+      
+      completion_times <- rv$completion_times[!(date == date_input & 
+                                                player_id == player_id_input)]
+      
+      rv$completion_times <- completion_times
+      
+      write_csv(completion_times, "completion_times.csv")
 
       shinyalert::shinyalert(
         text = "Successfully removed record",
