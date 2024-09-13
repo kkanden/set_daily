@@ -353,7 +353,7 @@ server <- function(input, output) {
         `Median Time` = seconds_to_string(median(time_sec))
       ),
       by = .(Player = player)
-      ][order(player)]
+      ][order(Player)]
 
       DT::datatable(
         data = dat,
