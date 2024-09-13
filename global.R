@@ -14,6 +14,7 @@ library(shinyWidgets)
 library(shinyalert)
 library(shinyBS)
 library(bslib)
+library(plotly)
 
 con_string <- "Driver={__DRIVER__};
 Server=tcp:kanden.database.windows.net,1433;
@@ -47,16 +48,12 @@ completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") %>%
 
 players <- dbGetQuery(con, "SELECT * FROM players") %>% 
   as.data.table
-  
-
-
-
 
 disconnect(con)
 
 
 
-seconds_to_string <- function(seconds){
+seconds_to_string <- function(seconds, ms = TRUE){
   if(is.na(seconds)){
     return(NA)
   }
@@ -65,10 +62,15 @@ seconds_to_string <- function(seconds){
   secs <- as.integer(seconds %% 60)
   milliseconds <- as.integer((seconds - floor(seconds)) * 1000)
   
-  formatted_time <- sprintf("%d:%02d.%03d",
+  formatted_time <- ifelse(ms,
+                           sprintf("%d:%02d.%03d",
                             minutes,
                             secs,
-                            milliseconds)
+                            milliseconds),
+                           sprintf("%d:%02d",
+                                   minutes,
+                                   secs)
+  )
   return(formatted_time)
 }
 

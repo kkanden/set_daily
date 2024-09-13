@@ -1,0 +1,10 @@
+name: set_daily
+title:
+username: kanden
+account: kanden
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 12697865
+bundleId: 9094956
+url: https://kanden.shinyapps.io/set_daily/
+version: 1

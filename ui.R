@@ -3,9 +3,15 @@ ui <- dashboardPage(
   header = shinydashboard::dashboardHeader(title = "Set Tracking"),
   sidebar = shinydashboard::dashboardSidebar(
     shinydashboard::sidebarMenu(
-      shinydashboard::menuItem("Daily results", 
-                               tabName = "daily_results", 
-                               icon = icon("calendar-days"))
+      shinydashboard::menuItem(
+        text = "Daily results", 
+        tabName = "daily_results", 
+        icon = icon("calendar-days")),
+      shinydashboard::menuItem(
+        text = "Statistics",
+        tabName = "stats",
+        icon = icon("chart-line")
+      )
     )
   ),
   body = shinydashboard::dashboardBody(
@@ -89,10 +95,10 @@ ui <- dashboardPage(
       )
     ),
     
-    tabItems(
-      tabItem(
+    shinydashboard::tabItems(
+      shinydashboard::tabItem(
         tabName = "daily_results",
-        fluidRow(
+        shiny::fluidRow(
           shinydashboard::box(
             width = 3,
             shinyWidgets::actionBttn(
@@ -114,19 +120,80 @@ ui <- dashboardPage(
             ),
           )
         ),
-        fluidRow(
+        shiny::fluidRow(
           shinydashboardPlus::box(
             title = "Daily Results",
             width = 12,
             height = 6,
             status = "primary",
             solidHeader = TRUE,
-            dataTableOutput(
+            DT::DTOutput(
               outputId = "daily_results_table"
             )
           )
         )
+      ),
+      
+    shinydashboard::tabItem(
+      tabName = "stats",
+      shiny::fluidRow(
+        shiny::column(
+          width = 6,
+          shinydashboardPlus::box(
+            title = "Running Average (7 day)",
+            width = 12,
+            height = 6,
+            status = "primary",
+            solidHeader = TRUE,
+            plotly::plotlyOutput(
+              outputId = "stats_runavg_7day"
+            )
+          )
+        ), 
+        shiny::column(
+          width = 6,
+          shinydashboardPlus::box(
+            title = "Running Average (30 day)",
+            width = 12,
+            height = 6,
+            status = "primary",
+            solidHeader = TRUE,
+            plotly::plotlyOutput(
+              outputId = "stats_runavg_30day"
+            )
+          )
+        )
+      ),
+      
+      shiny::fluidRow(
+        shiny::column(
+          width = 6,
+          shinydashboardPlus::box(
+            title = "Completion Time Histogram",
+            width = 12,
+            height = 6,
+            status = "primary",
+            solidHeader = TRUE,
+            plotly::plotlyOutput(
+              outputId = "stats_histogram"
+            )
+          )
+        ), 
+        shiny::column(
+          width = 6,
+          shinydashboardPlus::box(
+            title = "Completion Time by Weekday",
+            width = 12,
+            height = 6,
+            status = "primary",
+            solidHeader = TRUE,
+            plotly::plotlyOutput(
+              outputId = "stats_weekdaybar"
+            )
+          )
+        )
       )
+    )  
     )
   )
 )
