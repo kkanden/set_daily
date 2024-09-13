@@ -16,42 +16,46 @@ library(shinyBS)
 library(bslib)
 library(plotly)
 
-con_string <- "Driver={__DRIVER__};
-Server=tcp:kanden.database.windows.net,1433;
-Database=set_daily;
-Uid=__USER__;
-Pwd=__PASSWD__;
-Encrypt=yes;
-TrustServerCertificate=yes;
-Connection Timeout=1000;"
+# con_string <- "Driver={__DRIVER__};
+# Server=tcp:kanden.database.windows.net,1433;
+# Database=set_daily;
+# Uid=__USER__;
+# Pwd=__PASSWD__;
+# Encrypt=yes;
+# TrustServerCertificate=yes;
+# Connection Timeout=1000;"
+# 
+# connect <- function(){
+#   con <- DBI::dbConnect(
+#     odbc::odbc(),
+#     .connection_string = con_string %>% 
+#       stringi::stri_replace_all(fixed = "__USER__", config::get("azure_user")) %>% 
+#       stringi::stri_replace_all(fixed = "__PASSWD__", config::get("azure_pwd")) %>% 
+#       stringi::stri_replace_all(fixed = "__DRIVER__", config::get("driver"))
+#   )
+# }
+# 
+# disconnect <- function(con){
+#   DBI::dbDisconnect(con)
+# }
+# 
+# con <- connect()
+# 
+# 
+# completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") %>% 
+#   as.data.table
+# 
+# 
+# players <- dbGetQuery(con, "SELECT * FROM players") %>% 
+#   as.data.table
+# 
+# disconnect(con)
 
-connect <- function(){
-  con <- DBI::dbConnect(
-    odbc::odbc(),
-    .connection_string = con_string %>% 
-      stringi::stri_replace_all(fixed = "__USER__", config::get("azure_user")) %>% 
-      stringi::stri_replace_all(fixed = "__PASSWD__", config::get("azure_pwd")) %>% 
-      stringi::stri_replace_all(fixed = "__DRIVER__", config::get("driver"))
-  )
-}
+completion_times <- read_csv("completion_times.csv",
+                             show_col_types = FALSE) %>% as.data.table
 
-disconnect <- function(con){
-  DBI::dbDisconnect(con)
-}
-
-con <- connect()
-
-
-completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") %>% 
-  as.data.table
-
-
-players <- dbGetQuery(con, "SELECT * FROM players") %>% 
-  as.data.table
-
-disconnect(con)
-
-
+players <- read_csv("players.csv",
+                    show_col_types = FALSE) %>% as.data.table
 
 seconds_to_string <- function(seconds, ms = TRUE){
   if(is.na(seconds)){
