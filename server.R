@@ -14,11 +14,23 @@ server <- function(input, output) {
 
 
   ### DAILY RESULTS ----
+  
+  #### table ----
 
   output$daily_results_table <- DT::renderDT(
     expr = {
-      dat <- daily_results() %>%
-        mutate(time_sec = sapply(time_sec, seconds_to_string))
+
+      all_dates <- seq(min(daily_results()[, date]), Sys.Date(), by = 'days')
+      unique_players <- sort(unique(daily_results()[, player]))
+
+      dat <- daily_results()[order(date)]
+
+      full_dates <- data.table(player = rep(unique_players, each = length(all_dates)),
+                               date = rep(all_dates, length(unique_players)))
+
+      dat <- dat[full_dates, on = c("player", "date")][
+      , ':='(time_sec = sapply(time_sec, seconds_to_string))
+      ]
 
       dat <- data.table::dcast(dat,
         date ~ player,
@@ -148,6 +160,117 @@ server <- function(input, output) {
 
   ### STATS ----
 
+  #### top10 ----
+
+  output$stats_top10 <- DT::renderDT(
+    expr = {
+      dat <- daily_results()
+
+      dat <- dat[order(time_sec)][1:10, .(
+        Player = player,
+        Time = sapply(time_sec, seconds_to_string),
+        Date = date
+      )]
+
+      DT::datatable(
+        data = dat,
+        rownames = TRUE,
+        extensions = c("FixedHeader"),
+        options = list(
+          paging = FALSE,
+          dom = "t",
+          scrollY = "600px",
+          scrollCollapse = TRUE,
+          scrollX = 200,
+          FixedHeader = TRUE
+        )
+      ) %>%
+        DT::formatStyle(
+          0,
+          target = "row",
+          backgroundColor = DT::styleEqual(
+            c(1, 2, 3),
+            c("#FFD700", "#C0C0C0", "#CD7F32")
+          )
+        )
+    }
+  )
+
+
+  #### best, mean time by player ----
+
+  output$stats_besttimeplayer <- DT::renderDT(
+    expr = {
+      dat <- daily_results()
+
+      dat <- dat[, .(
+        `Best Time` = seconds_to_string(min(time_sec)),
+        `Mean Time` = seconds_to_string(mean(time_sec)),
+        `Median Time` = seconds_to_string(median(time_sec))
+      ),
+      by = .(Player = player)
+      ][order(Player)]
+
+      DT::datatable(
+        data = dat,
+        rownames = NULL,
+        extensions = c("FixedHeader"),
+        options = list(
+          paging = FALSE,
+          dom = "t",
+          scrollY = "600px",
+          scrollCollapse = TRUE,
+          scrollX = 200,
+          FixedHeader = TRUE
+        )
+      )
+    }
+  )
+  
+  #### running avg all time ----
+  
+  output$stats_runavg_alltime <- plotly::renderPlotly(
+    expr = {
+      all_dates <- seq(min(daily_results()[, date]), Sys.Date(), by = 'days')
+      unique_players <- sort(unique(daily_results()[, player]))
+      
+      dat <- daily_results()[order(date)][, .(date, cummean = cummean(time_sec)),
+                                           by = .(player)]
+      
+      full_dates <- data.table(player = rep(unique_players, each = length(all_dates)),
+                               date = rep(all_dates, length(unique_players)))
+      
+      dat[full_dates, on = c("player", "date")][
+        , ':='(cummean = nafill(cummean, type = "locf"))
+      ] %>% 
+        plotly::plot_ly(
+          x = ~date,
+          y = ~cummean,
+          color = ~player,
+          text = ~ sapply(cummean, seconds_to_string),
+          type = 'scatter',
+          mode = 'lines',
+          hoverinfo = "text",
+          hovertemplate = "%{text}"
+        ) %>%
+        layout(
+          title = "Rolling average (all time)",
+          hovermode = "x unified",
+          xaxis = list(
+            title = "Date"
+          ),
+          yaxis = list(
+            title = "Time",
+            # type = 'date',
+            tickvals = seq(0, 300, 30),
+            ticktext = sapply(seq(0, 300, 30), seconds_to_string, ms = FALSE)
+          )
+        )
+    }
+  )
+  
+  
+
   #### running avg 7 day  ----
 
   output$stats_runavg_7day <- plotly::renderPlotly(
@@ -190,8 +313,7 @@ server <- function(input, output) {
             title = "Time",
             # type = 'date',
             tickvals = seq(0, 300, 30),
-            ticktext = sapply(seq(0, 300, 30), seconds_to_string),
-            tickformat = "%M:%S"
+            ticktext = sapply(seq(0, 300, 30), seconds_to_string, ms = FALSE)
           )
         )
     }
@@ -239,8 +361,7 @@ server <- function(input, output) {
             title = "Time",
             # type = 'date',
             tickvals = seq(0, 300, 30),
-            ticktext = sapply(seq(0, 300, 30), seconds_to_string, ms = FALSE),
-            tickformat = "%M:%S"
+            ticktext = sapply(seq(0, 300, 30), seconds_to_string, ms = FALSE)
           )
         )
     }
@@ -267,11 +388,12 @@ server <- function(input, output) {
           xaxis = list(
             title = "Time",
             range = c(0, 300),
-            tickvals = seq(0, 300, 30),
-            ticktext = sapply(seq(0, 300, 30), seconds_to_string, ms = FALSE)
+            tickvals = seq(30, 300, 30),
+            ticktext = sapply(seq(30, 300, 30), seconds_to_string, ms = FALSE)
           ),
           yaxis = list(
-            title = "Frac"
+            # title = "Frac",
+            tickformat = '.0%'
           )
         )
     }
@@ -295,7 +417,7 @@ server <- function(input, output) {
         hoverinfo = "text",
         hovertemplate = "%{text}"
       ) %>% layout(
-        title = "Mean time by day of week",
+        title = "Mean time by weekday",
         xaxis = list(
           title = "Day of Week",
           tickvals = c(
@@ -307,65 +429,6 @@ server <- function(input, output) {
           title = "Time",
           tickvals = seq(0, 300, 30),
           ticktext = sapply(seq(0, 300, 30), seconds_to_string, ms = FALSE)
-        )
-      )
-    }
-  )
-
-  #### top10 ----
-
-  output$stats_top10 <- DT::renderDT(
-    expr = {
-      dat <- daily_results()
-
-      dat <- dat[order(time_sec)][1:10, .(
-        Player = player,
-        Time = sapply(time_sec, seconds_to_string),
-        Date = date
-      )]
-
-      DT::datatable(
-        data = dat,
-        rownames = TRUE,
-        extensions = c("FixedHeader"),
-        options = list(
-          paging = FALSE,
-          dom = "t",
-          scrollY = "600px",
-          scrollCollapse = TRUE,
-          scrollX = 200,
-          FixedHeader = TRUE
-        )
-      )
-    }
-  )
-
-
-  #### best, mean time by player ----
-
-  output$stats_besttimeplayer <- DT::renderDT(
-    expr = {
-      dat <- daily_results()
-
-      dat <- dat[, .(
-        `Best Time` = seconds_to_string(min(time_sec)),
-        `Mean Time` = seconds_to_string(mean(time_sec)),
-        `Median Time` = seconds_to_string(median(time_sec))
-      ),
-      by = .(Player = player)
-      ][order(Player)]
-
-      DT::datatable(
-        data = dat,
-        rownames = NULL,
-        extensions = c("FixedHeader"),
-        options = list(
-          paging = FALSE,
-          dom = "t",
-          scrollY = "600px",
-          scrollCollapse = TRUE,
-          scrollX = 200,
-          FixedHeader = TRUE
         )
       )
     }
