@@ -178,6 +178,16 @@ ui <- dashboardPage(
             )
           ),
           shinydashboardPlus::box(
+            title = "Rolling Average (all time)",
+            width = 12,
+            height = 6,
+            status = "primary",
+            solidHeader = TRUE,
+            plotly::plotlyOutput(
+              outputId = "stats_runavg_alltime"
+            )
+          ),
+          shinydashboardPlus::box(
             title = "Rolling Average (30 day)",
             width = 12,
             height = 6,
