@@ -14,22 +14,23 @@ server <- function(input, output) {
 
 
   ### DAILY RESULTS ----
-  
+
   #### table ----
 
   output$daily_results_table <- DT::renderDT(
     expr = {
-
-      all_dates <- seq(min(daily_results()[, date]), Sys.Date(), by = 'days')
+      all_dates <- seq(min(daily_results()[, date]), Sys.Date(), by = "days")
       unique_players <- sort(unique(daily_results()[, player]))
 
       dat <- daily_results()[order(date)]
 
-      full_dates <- data.table(player = rep(unique_players, each = length(all_dates)),
-                               date = rep(all_dates, length(unique_players)))
+      full_dates <- data.table(
+        player = rep(unique_players, each = length(all_dates)),
+        date = rep(all_dates, length(unique_players))
+      )
 
       dat <- dat[full_dates, on = c("player", "date")][
-      , ':='(time_sec = sapply(time_sec, seconds_to_string))
+        , ":="(time_sec = sapply(time_sec, seconds_to_string))
       ]
 
       dat <- data.table::dcast(dat,
@@ -107,7 +108,7 @@ server <- function(input, output) {
           sent <- DBI::dbSendQuery(con, query)
           DBI::dbClearResult(sent)
 
-          rv$completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") %>%
+          rv$completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") |>
             as.data.table()
 
           disconnect(con)
@@ -146,7 +147,7 @@ server <- function(input, output) {
       sent <- DBI::dbSendQuery(con, query)
       DBI::dbClearResult(sent)
 
-      rv$completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") %>%
+      rv$completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") |>
         as.data.table()
 
       disconnect(con)
@@ -184,7 +185,7 @@ server <- function(input, output) {
           scrollX = 200,
           FixedHeader = TRUE
         )
-      ) %>%
+      ) |>
         DT::formatStyle(
           0,
           target = "row",
@@ -226,35 +227,38 @@ server <- function(input, output) {
       )
     }
   )
-  
+
   #### running avg all time ----
-  
+
   output$stats_runavg_alltime <- plotly::renderPlotly(
     expr = {
-      all_dates <- seq(min(daily_results()[, date]), Sys.Date(), by = 'days')
+      all_dates <- seq(min(daily_results()[, date]), Sys.Date(), by = "days")
       unique_players <- sort(unique(daily_results()[, player]))
-      
+
       dat <- daily_results()[order(date)][, .(date, cummean = cummean(time_sec)),
-                                           by = .(player)]
-      
-      full_dates <- data.table(player = rep(unique_players, each = length(all_dates)),
-                               date = rep(all_dates, length(unique_players)))
-      
+        by = .(player)
+      ]
+
+      full_dates <- data.table(
+        player = rep(unique_players, each = length(all_dates)),
+        date = rep(all_dates, length(unique_players))
+      )
+
       dat[full_dates, on = c("player", "date")][
-        , ':='(cummean = nafill(cummean, type = "locf"))
-      ] %>% 
+        , ":="(cummean = nafill(cummean, type = "locf"))
+      ] |>
         plotly::plot_ly(
           x = ~date,
           y = ~cummean,
           color = ~player,
           text = ~ sapply(cummean, seconds_to_string),
-          type = 'scatter',
-          mode = 'lines',
+          type = "scatter",
+          mode = "lines",
           hoverinfo = "text",
           hovertemplate = "%{text}"
-        ) %>%
+        ) |>
         layout(
-          title = "Rolling average (all time)",
+          title = "Cumulative  average all time)",
           hovermode = "x unified",
           xaxis = list(
             title = "Date"
@@ -268,8 +272,8 @@ server <- function(input, output) {
         )
     }
   )
-  
-  
+
+
 
   #### running avg 7 day  ----
 
@@ -285,8 +289,8 @@ server <- function(input, output) {
         cummean_jula = frollmean(Jula, n = 7, na.rm = TRUE),
         cummean_oliwka = frollmean(Oliwka, n = 7, na.rm = TRUE))][
         , -c("Hubert", "Jula", "Oliwka")
-      ] %>%
-        rename("Hubert" = "cummean_hubert", "Jula" = "cummean_jula", "Oliwka" = "cummean_oliwka") %>%
+      ] |>
+        rename("Hubert" = "cummean_hubert", "Jula" = "cummean_jula", "Oliwka" = "cummean_oliwka") |>
         pivot_longer(
           cols = c("Hubert", "Jula", "Oliwka"),
         )
@@ -302,7 +306,7 @@ server <- function(input, output) {
         text = ~ sapply(value, seconds_to_string),
         hoverinfo = "text",
         hovertemplate = "%{text}"
-      ) %>%
+      ) |>
         layout(
           title = "Rolling average (7 day)",
           hovermode = "x unified",
@@ -333,8 +337,8 @@ server <- function(input, output) {
         cummean_jula = frollmean(Jula, n = 30, na.rm = TRUE),
         cummean_oliwka = frollmean(Oliwka, n = 30, na.rm = TRUE))][
         , -c("Hubert", "Jula", "Oliwka")
-      ] %>%
-        rename("Hubert" = "cummean_hubert", "Jula" = "cummean_jula", "Oliwka" = "cummean_oliwka") %>%
+      ] |>
+        rename("Hubert" = "cummean_hubert", "Jula" = "cummean_jula", "Oliwka" = "cummean_oliwka") |>
         pivot_longer(
           cols = c("Hubert", "Jula", "Oliwka"),
         )
@@ -350,7 +354,7 @@ server <- function(input, output) {
         text = ~ sapply(value, seconds_to_string),
         hoverinfo = "text",
         hovertemplate = "%{text}"
-      ) %>%
+      ) |>
         layout(
           title = "Rolling average (30 day)",
           hovermode = "x unified",
@@ -381,7 +385,7 @@ server <- function(input, output) {
         color = ~player,
         nbinsx = 30,
         hoverinfo = "skip"
-      ) %>%
+      ) |>
         layout(
           # barmode = 'overlay',
           title = "Completion Time Histogram",
@@ -393,7 +397,7 @@ server <- function(input, output) {
           ),
           yaxis = list(
             # title = "Frac",
-            tickformat = '.0%'
+            tickformat = ".0%"
           )
         )
     }
@@ -405,7 +409,15 @@ server <- function(input, output) {
     expr = {
       dat <- daily_results()
 
-      dat <- dat[, .(mean_time = mean(time_sec)), by = .(day_of_week = weekdays(date), player)]
+      dat <- dat[, .(mean_time = mean(time_sec)),
+        by = .(
+          day_of_week = factor(weekdays(date), levels = c(
+            "Monday", "Tuesday", "Wednesday", "Thursday",
+            "Friday", "Saturday", "Sunday"
+          )),
+          player
+        )
+      ]
 
       plotly::plot_ly(
         data = dat,
@@ -416,14 +428,10 @@ server <- function(input, output) {
         text = ~ sapply(mean_time, seconds_to_string),
         hoverinfo = "text",
         hovertemplate = "%{text}"
-      ) %>% layout(
+      ) |> layout(
         title = "Mean time by weekday",
         xaxis = list(
-          title = "Day of Week",
-          tickvals = c(
-            "Monday", "Tuesday", "Wednesday", "Thursday",
-            "Friday", "Saturday", "Sunday"
-          )
+          title = "Day of Week"
         ),
         yaxis = list(
           title = "Time",
