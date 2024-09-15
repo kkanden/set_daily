@@ -178,7 +178,7 @@ ui <- dashboardPage(
             )
           ),
           shinydashboardPlus::box(
-            title = "Rolling Average (all time)",
+            title = "Cumulative Average (all time)",
             width = 12,
             height = 6,
             status = "primary",

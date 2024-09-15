@@ -41,22 +41,22 @@ disconnect <- function(con){
 con <- connect()
 
 
-completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") %>%
-  as.data.table
+completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") |>
+  as.data.table()
 
 
-players <- dbGetQuery(con, "SELECT * FROM players") %>%
-  as.data.table
+players <- dbGetQuery(con, "SELECT * FROM players") |>
+  as.data.table()
 
 disconnect(con)
 
 # completion_times <- read_csv("completion_times.csv",
 #   show_col_types = FALSE
-# ) %>% as.data.table()
+# ) |> as.data.table()
 # 
 # players <- read_csv("players.csv",
 #   show_col_types = FALSE
-# ) %>% as.data.table()
+# ) |> as.data.table()
 
 seconds_to_string <- function(seconds, ms = TRUE) {
   if (is.na(seconds)) {
