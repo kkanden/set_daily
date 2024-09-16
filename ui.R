@@ -20,6 +20,17 @@ ui <- dashboardPage(
     ### MODALS ----
     # add record
     shinyBS::bsModal(
+      tags$head(
+        tags$script(HTML(
+          '$(document).keyup(function(event) {
+            if (event.key == "Enter" && $("#add_record_modal").is(":visible")) {
+              $("#add_record").click();
+            }
+          });
+          '
+        )
+        )
+      ),
       id = "add_record_modal",
       title = "Add Record",
       trigger = "add_record_modal_bttn",
@@ -57,6 +68,17 @@ ui <- dashboardPage(
 
     # remove record
     shinyBS::bsModal(
+      tags$head(
+        tags$script(HTML(
+          '$(document).keyup(function(event) {
+            if (event.key == "Enter" && $("#remove_record_modal").is(":visible")) {
+              $("#remove_record").click();
+            }
+          });
+          '
+        )
+        )
+      ),
       id = "remove_record_modal",
       title = "Remove Record",
       trigger = "remove_record_modal_bttn",
