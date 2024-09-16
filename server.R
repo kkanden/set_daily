@@ -112,11 +112,11 @@ server <- function(input, output, session) {
             as.data.table()
 
           disconnect(con)
-          
+
           shinyBS::toggleModal(
             session,
-            modalId = 'add_record_modal',
-            toggle = 'close'
+            modalId = "add_record_modal",
+            toggle = "close"
           )
 
           shinyalert::shinyalert(
@@ -157,11 +157,11 @@ server <- function(input, output, session) {
         as.data.table()
 
       disconnect(con)
-      
+
       shinyBS::toggleModal(
         session,
-        modalId = 'remove_record_modal',
-        toggle = 'close'
+        modalId = "remove_record_modal",
+        toggle = "close"
       )
 
       shinyalert::shinyalert(
