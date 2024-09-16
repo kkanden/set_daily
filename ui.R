@@ -21,14 +21,16 @@ ui <- dashboardPage(
     # add record
     shinyBS::bsModal(
       tags$head(
-        tags$script(HTML(
-          '$(document).keyup(function(event) {
-            if (event.key == "Enter" && $("#add_record_modal").is(":visible")) {
-              $("#add_record").click();
-            }
-          });
-          '
-        )
+        tags$script(
+          HTML(
+            '
+              $(document).keyup(function(event) {
+                if (event.key == "Enter" && $("#add_record_modal").is(":visible")) {
+                  $("#add_record").click();
+                }
+              });
+            '
+          )
         )
       ),
       id = "add_record_modal",
@@ -69,14 +71,16 @@ ui <- dashboardPage(
     # remove record
     shinyBS::bsModal(
       tags$head(
-        tags$script(HTML(
-          '$(document).keyup(function(event) {
-            if (event.key == "Enter" && $("#remove_record_modal").is(":visible")) {
-              $("#remove_record").click();
-            }
-          });
-          '
-        )
+        tags$script(
+          HTML(
+            '
+              $(document).keyup(function(event) {
+                if (event.key == "Enter" && $("#remove_record_modal").is(":visible")) {
+                  $("#remove_record").click();
+                }
+              });
+            '
+          )
         )
       ),
       id = "remove_record_modal",
