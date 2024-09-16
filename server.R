@@ -1,4 +1,4 @@
-server <- function(input, output) {
+server <- function(input, output, session) {
   rv <- shiny::reactiveValues(
     completion_times = completion_times,
     players = players
@@ -67,7 +67,7 @@ server <- function(input, output) {
     if (is.null(player_input)) {
       shinyalert::shinyalert(
         text = "Player not provided",
-        type = "warning",
+        type = "error",
         timer = 5000
       )
     } else {
@@ -79,7 +79,7 @@ server <- function(input, output) {
             "%s already has a record on %s",
             player_input, date_input
           ),
-          type = "warning",
+          type = "error",
           timer = 5000
         )
       } else {
@@ -94,7 +94,7 @@ server <- function(input, output) {
             0:34.9\n
             0:34.93\n
             1:00",
-            type = "warning"
+            type = "error"
           )
         } else {
           time_sec <- string_to_seconds(time_input)
@@ -112,6 +112,12 @@ server <- function(input, output) {
             as.data.table()
 
           disconnect(con)
+          
+          shinyBS::toggleModal(
+            session,
+            modalId = 'add_record_modal',
+            toggle = 'close'
+          )
 
           shinyalert::shinyalert(
             text = "Successfully added record",
@@ -132,7 +138,7 @@ server <- function(input, output) {
     if (is.null(player_input)) {
       shinyalert::shinyalert(
         text = "Player not provided",
-        type = "warning",
+        type = "error",
         timer = 5000
       )
     } else {
@@ -151,6 +157,12 @@ server <- function(input, output) {
         as.data.table()
 
       disconnect(con)
+      
+      shinyBS::toggleModal(
+        session,
+        modalId = 'remove_record_modal',
+        toggle = 'close'
+      )
 
       shinyalert::shinyalert(
         text = "Successfully removed record",
