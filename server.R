@@ -1,3 +1,5 @@
+source("string_seconds.R")
+
 server <- function(input, output, session) {
   rv <- shiny::reactiveValues(
     completion_times = completion_times,
@@ -24,7 +26,7 @@ server <- function(input, output, session) {
 
       dat <- daily_results()[order(date)]
 
-      full_dates <- data.table(
+      full_dates <- data.table::data.table(
         player = rep(unique_players, each = length(all_dates)),
         date = rep(all_dates, length(unique_players))
       )
@@ -108,8 +110,8 @@ server <- function(input, output, session) {
           sent <- DBI::dbSendQuery(con, query)
           DBI::dbClearResult(sent)
 
-          rv$completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") |>
-            as.data.table()
+          rv$completion_times <- DBI::dbGetQuery(con, "SELECT * FROM completion_times") |>
+            data.table::as.data.table()
 
           disconnect(con)
 
@@ -153,8 +155,8 @@ server <- function(input, output, session) {
       sent <- DBI::dbSendQuery(con, query)
       DBI::dbClearResult(sent)
 
-      rv$completion_times <- dbGetQuery(con, "SELECT * FROM completion_times") |>
-        as.data.table()
+      rv$completion_times <- DBI::dbGetQuery(con, "SELECT * FROM completion_times") |>
+        data.table::as.data.table()
 
       disconnect(con)
 
@@ -247,29 +249,29 @@ server <- function(input, output, session) {
       all_dates <- seq(min(daily_results()[, date]), Sys.Date(), by = "days")
       unique_players <- sort(unique(daily_results()[, player]))
 
-      dat <- daily_results()[order(date)][, .(date, cummean = cummean(time_sec)),
+      dat <- daily_results()[order(date)][, .(date, cummean = cumsum(time_sec)/seq_len(.N)),
         by = .(player)
       ]
 
-      full_dates <- data.table(
+      full_dates <- data.table::data.table(
         player = rep(unique_players, each = length(all_dates)),
         date = rep(all_dates, length(unique_players))
       )
 
       dat[full_dates, on = c("player", "date")][
-        , ":="(cummean = nafill(cummean, type = "locf"))
+        , ":="(cummean = data.table::nafill(cummean, type = "locf"))
       ] |>
         plotly::plot_ly(
           x = ~date,
           y = ~cummean,
           color = ~player,
-          text = ~ sapply(cummean, seconds_to_string),
+          text = ~sapply(cummean, seconds_to_string),
           type = "scatter",
           mode = "lines",
           hoverinfo = "text",
           hovertemplate = "%{text}"
         ) |>
-        layout(
+        plotly::layout(
           title = "Cumulative  average all time)",
           hovermode = "x unified",
           xaxis = list(
@@ -297,13 +299,13 @@ server <- function(input, output, session) {
       )
 
 
-      dat <- dat[order(date)][, ":="(cummean_hubert = frollmean(Hubert, n = 7, na.rm = TRUE),
-        cummean_jula = frollmean(Jula, n = 7, na.rm = TRUE),
-        cummean_oliwka = frollmean(Oliwka, n = 7, na.rm = TRUE))][
+      dat <- dat[order(date)][, ":="(cummean_hubert = data.table::frollmean(Hubert, n = 7, na.rm = TRUE),
+        cummean_jula = data.table::frollmean(Jula, n = 7, na.rm = TRUE),
+        cummean_oliwka = data.table::frollmean(Oliwka, n = 7, na.rm = TRUE))][
         , -c("Hubert", "Jula", "Oliwka")
       ] |>
-        rename("Hubert" = "cummean_hubert", "Jula" = "cummean_jula", "Oliwka" = "cummean_oliwka") |>
-        pivot_longer(
+        dplyr::rename("Hubert" = "cummean_hubert", "Jula" = "cummean_jula", "Oliwka" = "cummean_oliwka") |>
+        tidyr::pivot_longer(
           cols = c("Hubert", "Jula", "Oliwka"),
         )
 
@@ -319,7 +321,7 @@ server <- function(input, output, session) {
         hoverinfo = "text",
         hovertemplate = "%{text}"
       ) |>
-        layout(
+        plotly::layout(
           title = "Rolling average (7 day)",
           hovermode = "x unified",
           xaxis = list(
@@ -345,13 +347,13 @@ server <- function(input, output, session) {
       )
 
 
-      dat <- dat[order(date)][, ":="(cummean_hubert = frollmean(Hubert, n = 30, na.rm = TRUE),
+      dat <- dat[order(date)][, ":="(cummean_hubert = data.table::frollmean(Hubert, n = 30, na.rm = TRUE),
         cummean_jula = frollmean(Jula, n = 30, na.rm = TRUE),
         cummean_oliwka = frollmean(Oliwka, n = 30, na.rm = TRUE))][
         , -c("Hubert", "Jula", "Oliwka")
       ] |>
-        rename("Hubert" = "cummean_hubert", "Jula" = "cummean_jula", "Oliwka" = "cummean_oliwka") |>
-        pivot_longer(
+        dplyr::rename("Hubert" = "cummean_hubert", "Jula" = "cummean_jula", "Oliwka" = "cummean_oliwka") |>
+        tidyr::pivot_longer(
           cols = c("Hubert", "Jula", "Oliwka"),
         )
 
@@ -367,7 +369,7 @@ server <- function(input, output, session) {
         hoverinfo = "text",
         hovertemplate = "%{text}"
       ) |>
-        layout(
+        plotly::layout(
           title = "Rolling average (30 day)",
           hovermode = "x unified",
           xaxis = list(
@@ -398,8 +400,7 @@ server <- function(input, output, session) {
         nbinsx = 30,
         hoverinfo = "skip"
       ) |>
-        layout(
-          # barmode = 'overlay',
+        plotly::layout(
           title = "Completion Time Histogram",
           xaxis = list(
             title = "Time",
@@ -408,7 +409,6 @@ server <- function(input, output, session) {
             ticktext = sapply(seq(30, 300, 30), seconds_to_string, ms = FALSE)
           ),
           yaxis = list(
-            # title = "Frac",
             tickformat = ".0%"
           )
         )
@@ -440,15 +440,16 @@ server <- function(input, output, session) {
         text = ~ sapply(mean_time, seconds_to_string),
         hoverinfo = "text",
         hovertemplate = "%{text}"
-      ) |> layout(
-        title = "Mean time by weekday",
-        xaxis = list(
-          title = "Day of Week"
-        ),
-        yaxis = list(
-          title = "Time",
-          tickvals = seq(0, 300, 30),
-          ticktext = sapply(seq(0, 300, 30), seconds_to_string, ms = FALSE)
+      ) |> 
+        plotly::layout(
+          title = "Mean time by weekday",
+          xaxis = list(
+            title = "Day of Week"
+          ),
+          yaxis = list(
+            title = "Time",
+            tickvals = seq(0, 300, 30),
+            ticktext = sapply(seq(0, 300, 30), seconds_to_string, ms = FALSE)
         )
       )
     }
