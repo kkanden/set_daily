@@ -57,7 +57,7 @@ ui <- dashboardPage(
       ),
       shiny::textInput(
         inputId = "add_record_time",
-        label = "Input time ([min:sec(.ms)])",
+        label = "Input time [mm:ss(.sss)]",
       ),
       shinyWidgets::actionBttn(
         inputId = "add_record",
