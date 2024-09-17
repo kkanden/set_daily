@@ -32,7 +32,7 @@ server <- function(input, output, session) {
       )
 
       dat <- dat[full_dates, on = c("player", "date")][
-        , ":="(time_sec = sapply(time_sec, seconds_to_string))
+        , ":="(time_sec = seconds_to_string(time_sec))
       ]
 
       dat <- data.table::dcast(dat,
@@ -183,7 +183,7 @@ server <- function(input, output, session) {
 
       dat <- dat[order(time_sec)][1:10, .(
         Player = player,
-        Time = sapply(time_sec, seconds_to_string),
+        Time = seconds_to_string(time_sec),
         Date = date
       )]
 
@@ -265,7 +265,7 @@ server <- function(input, output, session) {
           x = ~date,
           y = ~cummean,
           color = ~player,
-          text = ~sapply(cummean, seconds_to_string),
+          text = ~seconds_to_string(cummean),
           type = "scatter",
           mode = "lines",
           hoverinfo = "text",
@@ -281,7 +281,7 @@ server <- function(input, output, session) {
             title = "Time",
             # type = 'date',
             tickvals = seq(0, 300, 30),
-            ticktext = sapply(seq(0, 300, 30), seconds_to_string, ms = FALSE)
+            ticktext = seconds_to_string(seq(0, 300, 30), ms = FALSE)
           )
         )
     }
@@ -306,7 +306,7 @@ server <- function(input, output, session) {
       ] |>
         dplyr::rename("Hubert" = "cummean_hubert", "Jula" = "cummean_jula", "Oliwka" = "cummean_oliwka") |>
         tidyr::pivot_longer(
-          cols = c("Hubert", "Jula", "Oliwka"),
+          cols = c("Hubert", "Jula", "Oliwka")
         )
 
 
@@ -317,7 +317,7 @@ server <- function(input, output, session) {
         type = "scatter",
         mode = "lines",
         color = ~name,
-        text = ~ sapply(value, seconds_to_string),
+        text = ~ seconds_to_string(value),
         hoverinfo = "text",
         hovertemplate = "%{text}"
       ) |>
@@ -331,7 +331,7 @@ server <- function(input, output, session) {
             title = "Time",
             # type = 'date',
             tickvals = seq(0, 300, 30),
-            ticktext = sapply(seq(0, 300, 30), seconds_to_string, ms = FALSE)
+            ticktext = seconds_to_string(seq(0, 300, 30), ms = FALSE)
           )
         )
     }
@@ -354,7 +354,7 @@ server <- function(input, output, session) {
       ] |>
         dplyr::rename("Hubert" = "cummean_hubert", "Jula" = "cummean_jula", "Oliwka" = "cummean_oliwka") |>
         tidyr::pivot_longer(
-          cols = c("Hubert", "Jula", "Oliwka"),
+          cols = c("Hubert", "Jula", "Oliwka")
         )
 
 
@@ -365,7 +365,7 @@ server <- function(input, output, session) {
         type = "scatter",
         mode = "lines",
         color = ~name,
-        text = ~ sapply(value, seconds_to_string),
+        text = ~ seconds_to_string(value),
         hoverinfo = "text",
         hovertemplate = "%{text}"
       ) |>
@@ -379,7 +379,7 @@ server <- function(input, output, session) {
             title = "Time",
             # type = 'date',
             tickvals = seq(0, 300, 30),
-            ticktext = sapply(seq(0, 300, 30), seconds_to_string, ms = FALSE)
+            ticktext = seconds_to_string(seq(0, 300, 30), ms = FALSE)
           )
         )
     }
@@ -406,7 +406,7 @@ server <- function(input, output, session) {
             title = "Time",
             range = c(0, 300),
             tickvals = seq(30, 300, 30),
-            ticktext = sapply(seq(30, 300, 30), seconds_to_string, ms = FALSE)
+            ticktext = seconds_to_string(seq(30, 300, 30), ms = FALSE)
           ),
           yaxis = list(
             tickformat = ".0%"
@@ -437,7 +437,7 @@ server <- function(input, output, session) {
         y = ~mean_time,
         type = "bar",
         color = ~player,
-        text = ~ sapply(mean_time, seconds_to_string),
+        text = ~ seconds_to_string(mean_time),
         hoverinfo = "text",
         hovertemplate = "%{text}"
       ) |> 
@@ -449,7 +449,7 @@ server <- function(input, output, session) {
           yaxis = list(
             title = "Time",
             tickvals = seq(0, 300, 30),
-            ticktext = sapply(seq(0, 300, 30), seconds_to_string, ms = FALSE)
+            ticktext = seconds_to_string(seq(0, 300, 30), ms = FALSE)
         )
       )
     }
