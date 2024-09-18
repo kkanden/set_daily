@@ -1,6 +1,8 @@
 source("string_seconds.R")
 
 server <- function(input, output, session) {
+  ### REACTIVE VALUES ----
+
   rv <- shiny::reactiveValues(
     completion_times = completion_times,
     players = players
@@ -249,7 +251,7 @@ server <- function(input, output, session) {
       all_dates <- seq(min(daily_results()[, date]), Sys.Date(), by = "days")
       unique_players <- sort(unique(daily_results()[, player]))
 
-      dat <- daily_results()[order(date)][, .(date, cummean = cumsum(time_sec)/seq_len(.N)),
+      dat <- daily_results()[order(date)][, .(date, cummean = cumsum(time_sec) / seq_len(.N)),
         by = .(player)
       ]
 
@@ -265,7 +267,7 @@ server <- function(input, output, session) {
           x = ~date,
           y = ~cummean,
           color = ~player,
-          text = ~seconds_to_string(cummean),
+          text = ~ seconds_to_string(cummean),
           type = "scatter",
           mode = "lines",
           hoverinfo = "text",
@@ -279,7 +281,6 @@ server <- function(input, output, session) {
           ),
           yaxis = list(
             title = "Time",
-            # type = 'date',
             tickvals = seq(0, 300, 30),
             ticktext = seconds_to_string(seq(0, 300, 30), ms = FALSE)
           )
@@ -440,7 +441,7 @@ server <- function(input, output, session) {
         text = ~ seconds_to_string(mean_time),
         hoverinfo = "text",
         hovertemplate = "%{text}"
-      ) |> 
+      ) |>
         plotly::layout(
           title = "Mean time by weekday",
           xaxis = list(
@@ -450,8 +451,8 @@ server <- function(input, output, session) {
             title = "Time",
             tickvals = seq(0, 300, 30),
             ticktext = seconds_to_string(seq(0, 300, 30), ms = FALSE)
+          )
         )
-      )
     }
   )
 }
