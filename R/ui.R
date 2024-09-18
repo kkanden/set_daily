@@ -1,7 +1,12 @@
 ui <- dashboardPage(
+
   # skin = "blue",
   header = shinydashboard::dashboardHeader(title = "Set Tracking"),
+
+  # SIDEBAR ----
+
   sidebar = shinydashboard::dashboardSidebar(
+    shinyjs::useShinyjs(),
     shinydashboard::sidebarMenu(
       shinydashboard::menuItem(
         text = "Statistics",
@@ -12,9 +17,29 @@ ui <- dashboardPage(
         text = "Daily results",
         tabName = "daily_results",
         icon = icon("calendar-days")
+      ),
+      hr(),
+      shiny::fluidRow(
+        column(
+          width = 12,
+          tags$a(
+            href = "https://github.com/kkanden/set_daily/",
+            target = "_blank",
+            shinyWidgets::actionBttn(
+              inputId = "github_bttn",
+              label = "",
+              icon = icon("github"),
+              style = "simple",
+              size = "s"
+            )
+          )
+        )
       )
     )
   ),
+
+  # BODY ----
+
   body = shinydashboard::dashboardBody(
 
     ### MODALS ----
