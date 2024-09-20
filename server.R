@@ -298,21 +298,18 @@ server <- function(input, output, session) {
         date ~ player,
         value.var = "time_sec"
       )
-
-
-      dat <- dat[order(date)][, ":="(cummean_hubert = data.table::frollmean(Hubert, n = 7, na.rm = TRUE),
-        cummean_jula = data.table::frollmean(Jula, n = 7, na.rm = TRUE),
-        cummean_oliwka = data.table::frollmean(Oliwka, n = 7, na.rm = TRUE))][
-        , -c("Hubert", "Jula", "Oliwka")
-      ] |>
-        dplyr::rename("Hubert" = "cummean_hubert", "Jula" = "cummean_jula", "Oliwka" = "cummean_oliwka") |>
+      
+      means <- frollmean(dat[order(date), -c("date")], n = 7, na.rm = T)
+      
+      names(means) <- colnames(dat[, -c("date")])
+      
+      means$date <- dat[order(date), date]
+      
+      as.data.table(means) |> 
         tidyr::pivot_longer(
-          cols = c("Hubert", "Jula", "Oliwka")
-        )
-
-
+          cols = -c("date")
+        ) |>
       plotly::plot_ly(
-        data = dat,
         x = ~date,
         y = ~value,
         type = "scatter",
@@ -346,43 +343,40 @@ server <- function(input, output, session) {
         date ~ player,
         value.var = "time_sec"
       )
-
-
-      dat <- dat[order(date)][, ":="(cummean_hubert = data.table::frollmean(Hubert, n = 30, na.rm = TRUE),
-        cummean_jula = frollmean(Jula, n = 30, na.rm = TRUE),
-        cummean_oliwka = frollmean(Oliwka, n = 30, na.rm = TRUE))][
-        , -c("Hubert", "Jula", "Oliwka")
-      ] |>
-        dplyr::rename("Hubert" = "cummean_hubert", "Jula" = "cummean_jula", "Oliwka" = "cummean_oliwka") |>
+      
+      means <- frollmean(dat[order(date), -c("date")], n = 30, na.rm = T)
+      
+      names(means) <- colnames(dat[, -c("date")])
+      
+      means$date <- dat[order(date), date]
+      
+      as.data.table(means) |>  
         tidyr::pivot_longer(
-          cols = c("Hubert", "Jula", "Oliwka")
-        )
-
-
-      plotly::plot_ly(
-        data = dat,
-        x = ~date,
-        y = ~value,
-        type = "scatter",
-        mode = "lines",
-        color = ~name,
-        text = ~ seconds_to_string(value),
-        hoverinfo = "text",
-        hovertemplate = "%{text}"
-      ) |>
-        plotly::layout(
-          title = "Rolling average (30 day)",
-          hovermode = "x unified",
-          xaxis = list(
-            title = "Date"
-          ),
-          yaxis = list(
-            title = "Time",
-            # type = 'date',
-            tickvals = seq(0, 300, 30),
-            ticktext = seconds_to_string(seq(0, 300, 30), ms = FALSE)
+          cols = -c("date")
+        ) |>
+        plotly::plot_ly(
+          x = ~date,
+          y = ~value,
+          type = "scatter",
+          mode = "lines",
+          color = ~name,
+          text = ~ seconds_to_string(value),
+          hoverinfo = "text",
+          hovertemplate = "%{text}"
+        ) |>
+          plotly::layout(
+            title = "Rolling average (30 day)",
+            hovermode = "x unified",
+            xaxis = list(
+              title = "Date"
+            ),
+            yaxis = list(
+              title = "Time",
+              # type = 'date',
+              tickvals = seq(0, 300, 30),
+              ticktext = seconds_to_string(seq(0, 300, 30), ms = FALSE)
+            )
           )
-        )
     }
   )
 
