@@ -15,6 +15,7 @@ library(shinyWidgets)
 library(shinyalert)
 library(shinyBS)
 library(bslib)
+library(bsicons)
 library(plotly)
 
 

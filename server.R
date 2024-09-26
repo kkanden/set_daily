@@ -16,6 +16,119 @@ server <- function(input, output, session) {
     daily_results
   })
 
+  ### MODALS ----
+  # add record
+  shiny::observeEvent(input$add_record_modal_bttn, {
+    shiny::showModal(
+      shiny::modalDialog(
+        footer = modalButton('Close'),
+        tags$head(
+          tags$script(
+            HTML(
+              '
+              $(document).keyup(function(event) {
+                if (event.key == "Enter" && $("#add_record_modal").is(":visible")) {
+                  $("#add_record").click();
+                }
+              });
+            '
+            )
+          )
+        ),
+        id = "add_record_modal",
+        title = "Add Record",
+        trigger = "add_record_modal_bttn",
+        size = "m",
+        shiny::dateInput(
+          inputId = "add_record_date",
+          label = "Select date",
+          weekstart = 1,
+          min = "2024-05-27",
+          max = lubridate::today()
+        ),
+        shinyWidgets::pickerInput(
+          inputId = "add_record_player",
+          label = "Select player",
+          choices = sort(players[, name]),
+          selected = NULL,
+          multiple = TRUE,
+          options = pickerOptions(
+            title = "Nothing selected",
+            maxOptions = 1
+          )
+        ),
+        shiny::textInput(
+          inputId = "add_record_time",
+          label = "Input time [mm:ss(.sss)]",
+        ),
+        shiny::br(),
+        shiny::div(
+          bslib::input_task_button(
+            id = "add_record",
+            label = "Add record",
+            icon = icon("plus"),
+            type = "success"
+          ),
+          style = "float: right"
+        )
+      )
+    )
+  })
+
+  # remove record
+  shiny::observeEvent(input$remove_record_modal_bttn, {
+    shiny::showModal(
+      shiny::modalDialog(
+        footer = modalButton('Close'),
+        tags$head(
+          tags$script(
+            HTML(
+              '
+              $(document).keyup(function(event) {
+                if (event.key == "Enter" && $("#remove_record_modal").is(":visible")) {
+                  $("#remove_record").click();
+                }
+              });
+            '
+            )
+          )
+        ),
+        id = "remove_record_modal",
+        title = "Remove Record",
+        trigger = "remove_record_modal_bttn",
+        size = "m",
+        shiny::dateInput(
+          inputId = "remove_record_date",
+          label = "Select date",
+          weekstart = 1,
+          min = "2024-05-27",
+          max = lubridate::today()
+        ),
+        shinyWidgets::pickerInput(
+          inputId = "remove_record_player",
+          label = "Select player",
+          choices = sort(players[, name]),
+          selected = NULL,
+          multiple = TRUE,
+          options = pickerOptions(
+            title = "Nothing selected",
+            maxOptions = 1
+          )
+        ),
+        shiny::br(),
+        shiny::div(
+          bslib::input_task_button(
+            id = "remove_record",
+            label = "Remove record",
+            icon = icon("minus"),
+            type = "danger"
+          ),
+          style = "float: right"
+        )
+      )
+    )
+  })
+
 
   ### DAILY RESULTS ----
 
@@ -117,15 +230,12 @@ server <- function(input, output, session) {
 
           disconnect(con)
 
-          shinyBS::toggleModal(
-            session,
-            modalId = "add_record_modal",
-            toggle = "close"
-          )
+          shiny::removeModal()
 
           shinyalert::shinyalert(
             text = "Successfully added record",
-            type = "success"
+            type = "success",
+            timer = 2000
           )
         }
       }
@@ -162,15 +272,12 @@ server <- function(input, output, session) {
 
       disconnect(con)
 
-      shinyBS::toggleModal(
-        session,
-        modalId = "remove_record_modal",
-        toggle = "close"
-      )
+      shiny::removeModal()
 
       shinyalert::shinyalert(
         text = "Successfully removed record",
-        type = "success"
+        type = "success",
+        timer = 2000
       )
     }
   })
@@ -202,6 +309,12 @@ server <- function(input, output, session) {
           FixedHeader = TRUE
         )
       ) |>
+        DT::formatStyle(
+          columns = 0:ncol(dat),
+          target = "cell", 
+          color = JS("\"unset\""),
+          backgroundColor = JS("\"unset\"")
+        ) |> 
         DT::formatStyle(
           0,
           target = "row",
@@ -274,8 +387,11 @@ server <- function(input, output, session) {
           hovertemplate = "%{text}"
         ) |>
         plotly::layout(
-          title = "Cumulative  average all time)",
+          title = HTML("Cumulative average all time"),
           hovermode = "x unified",
+          margin = list(
+            t = 50
+          ),
           xaxis = list(
             title = "Date"
           ),
@@ -298,30 +414,33 @@ server <- function(input, output, session) {
         date ~ player,
         value.var = "time_sec"
       )
-      
+
       means <- frollmean(dat[order(date), -c("date")], n = 7, na.rm = T)
-      
+
       names(means) <- colnames(dat[, -c("date")])
-      
+
       means$date <- dat[order(date), date]
-      
-      as.data.table(means) |> 
+
+      as.data.table(means) |>
         tidyr::pivot_longer(
           cols = -c("date")
         ) |>
-      plotly::plot_ly(
-        x = ~date,
-        y = ~value,
-        type = "scatter",
-        mode = "lines",
-        color = ~name,
-        text = ~ seconds_to_string(value),
-        hoverinfo = "text",
-        hovertemplate = "%{text}"
-      ) |>
+        plotly::plot_ly(
+          x = ~date,
+          y = ~value,
+          type = "scatter",
+          mode = "lines",
+          color = ~name,
+          text = ~ seconds_to_string(value),
+          hoverinfo = "text",
+          hovertemplate = "%{text}"
+        ) |>
         plotly::layout(
           title = "Rolling average (7 day)",
           hovermode = "x unified",
+          margin = list(
+            t = 50
+          ),
           xaxis = list(
             title = "Date"
           ),
@@ -343,14 +462,14 @@ server <- function(input, output, session) {
         date ~ player,
         value.var = "time_sec"
       )
-      
+
       means <- frollmean(dat[order(date), -c("date")], n = 30, na.rm = T)
-      
+
       names(means) <- colnames(dat[, -c("date")])
-      
+
       means$date <- dat[order(date), date]
-      
-      as.data.table(means) |>  
+
+      as.data.table(means) |>
         tidyr::pivot_longer(
           cols = -c("date")
         ) |>
@@ -364,19 +483,22 @@ server <- function(input, output, session) {
           hoverinfo = "text",
           hovertemplate = "%{text}"
         ) |>
-          plotly::layout(
-            title = "Rolling average (30 day)",
-            hovermode = "x unified",
-            xaxis = list(
-              title = "Date"
-            ),
-            yaxis = list(
-              title = "Time",
-              # type = 'date',
-              tickvals = seq(0, 300, 30),
-              ticktext = seconds_to_string(seq(0, 300, 30), ms = FALSE)
-            )
+        plotly::layout(
+          title = "Rolling average (30 day)",
+          hovermode = "x unified",
+          margin = list(
+            t = 50
+          ),
+          xaxis = list(
+            title = "Date"
+          ),
+          yaxis = list(
+            title = "Time",
+            # type = 'date',
+            tickvals = seq(0, 300, 30),
+            ticktext = seconds_to_string(seq(0, 300, 30), ms = FALSE)
           )
+        )
     }
   )
 
@@ -393,15 +515,18 @@ server <- function(input, output, session) {
         histnorm = "probability",
         color = ~player,
         nbinsx = 30,
-        hoverinfo = "skip"
+        hovertemplate = "%{y:.2%}"
       ) |>
         plotly::layout(
           title = "Completion Time Histogram",
+          margin = list(
+            t = 50
+          ),
           xaxis = list(
             title = "Time",
             range = c(0, 300),
-            tickvals = seq(30, 300, 30),
-            ticktext = seconds_to_string(seq(30, 300, 30), ms = FALSE)
+            tickvals = seq(30, 300, 15),
+            ticktext = seconds_to_string(seq(30, 300, 15), ms = FALSE)
           ),
           yaxis = list(
             tickformat = ".0%"
@@ -438,6 +563,9 @@ server <- function(input, output, session) {
       ) |>
         plotly::layout(
           title = "Mean time by weekday",
+          margin = list(
+            t = 50
+          ),
           xaxis = list(
             title = "Day of Week"
           ),

@@ -1,238 +1,149 @@
 ui <- bslib::page_navbar(
-
+  shinyauthr::loginUI(id = "login"),
   theme = bs_theme(preset = "shiny"),
-  bslib::input_dark_mode(),
-  title = "Set Tracking",
-
-  # SIDEBAR ----
-
-  # sidebar = shinydashboard::dashboardSidebar(
-  #   shinyjs::useShinyjs(),
-  #   shinydashboard::sidebarMenu(
-  #     shinydashboard::menuItem(
-  #       text = "Statistics",
-  #       tabName = "stats",
-  #       icon = icon("chart-line")
-  #     ),
-  #     shinydashboard::menuItem(
-  #       text = "Daily results",
-  #       tabName = "daily_results",
-  #       icon = icon("calendar-days")
-  #     ),
-  #     hr(),
-  #     shiny::fluidRow(
-  #       column(
-  #         width = 12,
-  #         tags$a(
-  #           href = "https://github.com/kkanden/set_daily/",
-  #           target = "_blank",
-  #           shinyWidgets::actionBttn(
-  #             inputId = "github_bttn",
-  #             label = "",
-  #             icon = icon("github"),
-  #             style = "simple",
-  #             size = "s"
-  #           )
-  #         )
-  #       )
-  #     )
-  #   )
-  # ),
-
+  title = HTML('<img src="set_logo.png" height=40> Tracking'),
+  fillable = FALSE,
   # BODY ----
 
-  ### MODALS ----
-  # add record
-  shinyBS::bsModal(
-    tags$head(
-      tags$script(
-        HTML(
-          '
-              $(document).keyup(function(event) {
-                if (event.key == "Enter" && $("#add_record_modal").is(":visible")) {
-                  $("#add_record").click();
-                }
-              });
-            '
-        )
-      )
-    ),
-    id = "add_record_modal",
-    title = "Add Record",
-    trigger = "add_record_modal_bttn",
-    size = "m",
-    shiny::dateInput(
-      inputId = "add_record_date",
-      label = "Select date",
-      weekstart = 1,
-      min = "2024-05-27",
-      max = lubridate::today()
-    ),
-    shinyWidgets::pickerInput(
-      inputId = "add_record_player",
-      label = "Select player",
-      choices = sort(players[, name]),
-      selected = NULL,
-      multiple = TRUE,
-      options = pickerOptions(
-        title = "Nothing selected",
-        maxOptions = 1
-      )
-    ),
-    shiny::textInput(
-      inputId = "add_record_time",
-      label = "Input time [mm:ss(.sss)]",
-    ),
-    shinyWidgets::actionBttn(
-      inputId = "add_record",
-      label = "Add record",
-      icon = icon("plus"),
-      style = "simple",
-      color = "success"
-    )
-  ),
-
-  # remove record
-  shinyBS::bsModal(
-    tags$head(
-      tags$script(
-        HTML(
-          '
-              $(document).keyup(function(event) {
-                if (event.key == "Enter" && $("#remove_record_modal").is(":visible")) {
-                  $("#remove_record").click();
-                }
-              });
-            '
-        )
-      )
-    ),
-    id = "remove_record_modal",
-    title = "Remove Record",
-    trigger = "remove_record_modal_bttn",
-    size = "m",
-    shiny::dateInput(
-      inputId = "remove_record_date",
-      label = "Select date",
-      weekstart = 1,
-      min = "2024-05-27",
-      max = lubridate::today()
-    ),
-    shinyWidgets::pickerInput(
-      inputId = "remove_record_player",
-      label = "Select player",
-      choices = sort(players[, name]),
-      selected = NULL,
-      multiple = TRUE,
-      options = pickerOptions(
-        title = "Nothing selected",
-        maxOptions = 1
-      )
-    ),
-    shinyWidgets::actionBttn(
-      inputId = "remove_record",
-      label = "Remove record",
-      icon = icon("minus"),
-      style = "simple",
-      color = "danger"
-    )
+  # Custom CSS for sticky header
+  tags$head(
+    tags$style(HTML("
+      .bslib-page-navbar .navbar {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background-color: white; /* Change this to match your navbar color */
+      }
+    "))
   ),
 
   ### STATS ----
   bslib::nav_panel(
     title = "Statistics",
-    bslib::layout_columns(
-      col_widths = c(6, 6),
-      row_heights = c(1),
-      bslib::card(
-        full_screen = TRUE,
-        bslib::card_header(
-          "Top 10 Best Times"
+    class = "bslib-page-dashboard",
+    icon = bsicons::bs_icon("graph-up-arrow"),
+    bslib::layout_column_wrap(
+      width = 1 / 2,
+      heights_equal = "row",
+      bslib::layout_columns(
+        col_widths = 12,
+        # width = 1,
+        # heights_equal = "row",
+        bslib::card(
+          # full_screen = TRUE,
+          bslib::card_header("Top 10 Best Times"),
+          bslib::card_body(
+            DT::DTOutput(outputId = "stats_top10")
+          )
         ),
-        bslib::card_body(
-          max_height = '200px',
-          DT::DTOutput(
-            outputId = "stats_top10"
+        bslib::card(
+          full_screen = TRUE,
+          bslib::card_header("Rolling Average (7 day)"),
+          bslib::card_body(
+            plotly::plotlyOutput(outputId = "stats_runavg_7day")
           )
-        )
-      ),
-      bslib::card(
-        bslib::card_header("Rolling Average (7 day)"),
-        bslib::card_body(
-          plotly::plotlyOutput(
-            outputId = "stats_runavg_7day"
+        ),
+        bslib::card(
+          full_screen = TRUE,
+          bslib::card_header("Completion Time Histogram"),
+          bslib::card_body(
+            plotly::plotlyOutput(outputId = "stats_histogram")
           )
-        )
+        ),
       ),
-      bslib::card(
-        bslib::card_header("Completion Time Histogram"),
-        bslib::card_body(
-          plotly::plotlyOutput(
-            outputId = "stats_histogram"
+      bslib::layout_columns(
+        col_widths = 12,
+        # width = 1,
+        # heights_equal = "row",
+        bslib::card(
+          # full_screen = TRUE,
+          fill = FALSE,
+          bslib::card_header("Best, Mean, Median Time"),
+          bslib::card_body(
+            DT::DTOutput(outputId = "stats_besttimeplayer")
           )
-        )
-      ),
-      bslib::card(
-        bslib::card_header("Best, Mean, Median Time"),
-        bslib::card_body(
-          DT::DTOutput(
-            outputId = "stats_besttimeplayer"
+        ),
+        bslib::card(
+          full_screen = TRUE,
+          bslib::card_header("Cumulative Average (all time)"),
+          bslib::card_body(
+            plotly::plotlyOutput(outputId = "stats_runavg_alltime")
           )
-        )
-      ),
-      bslib::card(
-        bslib::card_header("Cumulative Average (all time)"),
-        bslib::card_body(
-          plotly::plotlyOutput(
-            outputId = "stats_runavg_alltime"
+        ),
+        bslib::card(
+          full_screen = TRUE,
+          bslib::card_header("Rolling Average (30 day)"),
+          bslib::card_body(
+            plotly::plotlyOutput(outputId = "stats_runavg_30day")
           )
-        )
-      ),
-      bslib::card(
-        bslib::card_header("Rolling Average (30 day)"),
-        bslib::card_body(
-          plotly::plotlyOutput(
-            outputId = "stats_runavg_30day"
-          )
-        )
-      ),
-      bslib::card(
-        bslib::card_header("Completion Time by Weekday"),
-        bslib::card_body(
-          plotly::plotlyOutput(
-            outputId = "stats_weekdaybar"
+        ),
+        bslib::card(
+          full_screen = TRUE,
+          bslib::card_header("Completion Time by Weekday"),
+          bslib::card_body(
+            plotly::plotlyOutput(outputId = "stats_weekdaybar")
           )
         )
       )
     )
   ),
-  
+
   ### DAILY RESULTS ----
   bslib::nav_panel(
     title = "Daily results",
-    layout_columns(
-      shinyWidgets::actionBttn(
-        inputId = "add_record_modal_bttn",
-        label = "Add Record",
-        icon = icon("plus"),
-        style = "simple",
-        color = "primary",
-        size = "s"
-      ),
-      shinyWidgets::actionBttn(
-        inputId = "remove_record_modal_bttn",
-        label = "Remove Record",
-        icon = icon("minus"),
-        style = "simple",
-        color = "danger",
-        size = "s"
-      )
-    ),
+    class = "bslib-page-dashboard",
+    icon = bsicons::bs_icon("calendar3"),
     bslib::card(
+      height = 900,
       bslib::card_header("Daily Results"),
+      shiny::div(
+        style = "display: flex; gap: 10px",
+        shinyWidgets::actionBttn(
+          inputId = "add_record_modal_bttn",
+          label = "Add Record",
+          icon = icon("plus"),
+          style = "simple",
+          color = "primary",
+          size = "s",
+        ),
+        shinyWidgets::actionBttn(
+          inputId = "remove_record_modal_bttn",
+          label = "Remove Record",
+          icon = icon("minus"),
+          style = "simple",
+          color = "danger",
+          size = "s",
+        ),
+      ),
       DT::DTOutput(
         outputId = "daily_results_table"
       )
     )
   ),
+  bslib::nav_spacer(),
+  bslib::nav_item(
+    bslib::tooltip(
+      tags$a(
+        tags$span(
+          bsicons::bs_icon("github")
+        ),
+        href = "https://github.com/kkanden/set_daily",
+        target = "_blank"
+      ),
+      "Source code",
+    ),
+  ),
+  bslib::nav_item(
+    bslib::input_dark_mode(
+      mode = ifelse(data.table::hour(
+        data.table::as.ITime(
+          Sys.time(),
+          tz = "Europe/Warsaw"
+        )
+      ) %in% c(18:23, 0:5),
+      "dark",
+      "light"
+      )
+    ),
+  )
 )
