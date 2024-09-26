@@ -1,6 +1,14 @@
 source("string_seconds.R")
 
 server <- function(input, output, session) {
+  shinytitle::change_window_title(
+    title = "SET Tracking"
+  )
+  
+  shinytitle::busy_window_title(
+    title = "SET Tracking"
+  )
+  
   ### REACTIVE VALUES ----
 
   rv <- shiny::reactiveValues(

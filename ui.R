@@ -1,7 +1,8 @@
 ui <- bslib::page_navbar(
-  shinyauthr::loginUI(id = "login"),
   theme = bs_theme(preset = "shiny"),
   title = HTML('<img src="set_logo.png" height=40> Tracking'),
+  shinytitle::use_shiny_title(),
+  
   fillable = FALSE,
   # BODY ----
 
