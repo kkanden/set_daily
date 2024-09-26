@@ -17,6 +17,7 @@ library(shinyBS)
 library(bslib)
 library(bsicons)
 library(plotly)
+library(shinytitle)
 
 
 connect <- function() {
