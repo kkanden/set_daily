@@ -27,7 +27,7 @@ seconds_to_string <- function(seconds, ms = TRUE) {
           "%d:%02d.%03d",
           as.integer(x / 60),
           as.integer(x %% 60),
-          as.integer((x - floor(x)) * 1000)
+          round((x - floor(x)) * 1000)
         )
       } else {
         sprintf(
