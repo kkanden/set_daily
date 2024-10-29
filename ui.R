@@ -1,14 +1,14 @@
 ui <- bslib::page_navbar(
   theme = bs_theme(preset = "shiny"),
   title = HTML('<img src="set_logo.png" height=40> Tracking'),
-  shinytitle::use_shiny_title(),
-  
   fillable = FALSE,
+  
   # BODY ----
-
+  
+  header = {
   # Custom CSS for sticky header
-  tags$head(
-    tags$style(HTML("
+    tags$head(
+      tags$style(HTML("
       .bslib-page-navbar .navbar {
         position: sticky;
         top: 0;
@@ -16,7 +16,10 @@ ui <- bslib::page_navbar(
         background-color: white; /* Change this to match your navbar color */
       }
     "))
-  ),
+    )
+    shinytitle::use_shiny_title()
+  },
+
 
   ### STATS ----
   bslib::nav_panel(
@@ -28,10 +31,7 @@ ui <- bslib::page_navbar(
       heights_equal = "row",
       bslib::layout_columns(
         col_widths = 12,
-        # width = 1,
-        # heights_equal = "row",
         bslib::card(
-          # full_screen = TRUE,
           bslib::card_header("Top 10 Best Times"),
           bslib::card_body(
             DT::DTOutput(outputId = "stats_top10")
@@ -50,14 +50,11 @@ ui <- bslib::page_navbar(
           bslib::card_body(
             plotly::plotlyOutput(outputId = "stats_histogram")
           )
-        ),
+        )
       ),
       bslib::layout_columns(
         col_widths = 12,
-        # width = 1,
-        # heights_equal = "row",
         bslib::card(
-          # full_screen = TRUE,
           fill = FALSE,
           bslib::card_header("Best, Mean, Median Time"),
           bslib::card_body(
