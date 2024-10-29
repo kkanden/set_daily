@@ -314,7 +314,13 @@ server <- function(input, output, session) {
           scrollY = "600px",
           scrollCollapse = TRUE,
           scrollX = 200,
-          FixedHeader = TRUE
+          FixedHeader = TRUE,
+          columnDefs = list(
+            list(
+              className = "dt-center",
+              targets = "_all"
+            )
+          )
         )
       ) |>
         DT::formatStyle(
@@ -330,6 +336,10 @@ server <- function(input, output, session) {
             c(1, 2, 3),
             c("#FFD700", "#C0C0C0", "#CD7F32")
           )
+        ) |> 
+        DT::formatStyle(
+          columns = colnames(dat),
+          fontWeight = "bold"
         )
     }
   )
@@ -344,7 +354,8 @@ server <- function(input, output, session) {
       dat <- dat[, .(
         `Best Time` = seconds_to_string(min(time_sec)),
         `Mean Time` = seconds_to_string(mean(time_sec)),
-        `Median Time` = seconds_to_string(median(time_sec))
+        `Median Time` = seconds_to_string(median(time_sec)),
+        `Daily Sets Completed` = .N
       ),
       by = .(Player = player)
       ][order(Player)]
@@ -359,8 +370,18 @@ server <- function(input, output, session) {
           scrollY = "600px",
           scrollCollapse = TRUE,
           scrollX = 200,
-          FixedHeader = TRUE
+          FixedHeader = TRUE,
+          columnDefs = list(
+            list(
+              className = "dt-center",
+              targets = "_all"
+            )
+          )
         )
+      ) |> 
+      DT::formatStyle(
+        columns = colnames(dat),
+        fontWeight = "bold"
       )
     }
   )
@@ -381,9 +402,11 @@ server <- function(input, output, session) {
         date = rep(all_dates, length(unique_players))
       )
 
-      dat[full_dates, on = c("player", "date")][
+      dat <- dat[full_dates, on = c("player", "date")][
         , ":="(cummean = data.table::nafill(cummean, type = "locf"))
-      ] |>
+      ]
+      
+      dat |> 
         plotly::plot_ly(
           x = ~date,
           y = ~cummean,
@@ -401,12 +424,15 @@ server <- function(input, output, session) {
             t = 50
           ),
           xaxis = list(
-            title = "Date"
+            title = "Date",
+            range = c(Sys.Date() - months(3), Sys.Date())
           ),
           yaxis = list(
             title = "Time",
-            tickvals = seq(0, 300, 30),
-            ticktext = seconds_to_string(seq(0, 300, 30), ms = FALSE)
+            range = c(min(dat[date %between% c(Sys.Date() - months(3), Sys.Date()), cummean]) - 15,
+                      max(dat[date %between% c(Sys.Date() - months(3), Sys.Date()), cummean]) + 15),
+            tickvals = seq(0, 300, 15),
+            ticktext = seconds_to_string(seq(0, 300, 15), ms = FALSE)
           )
         )
     }
@@ -428,11 +454,13 @@ server <- function(input, output, session) {
       names(means) <- colnames(dat[, -c("date")])
 
       means$date <- dat[order(date), date]
+      
+      data.table::setDT(means)
+      
+      means_long <- data.table::melt(means, id.vars = "date",
+                       variable.name = "name")
 
-      as.data.table(means) |>
-        tidyr::pivot_longer(
-          cols = -c("date")
-        ) |>
+      means_long |>
         plotly::plot_ly(
           x = ~date,
           y = ~value,
@@ -450,11 +478,13 @@ server <- function(input, output, session) {
             t = 50
           ),
           xaxis = list(
-            title = "Date"
+            title = "Date",
+            range = c(Sys.Date() - months(3), Sys.Date())
           ),
           yaxis = list(
             title = "Time",
-            # type = 'date',
+            range = c(min(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) - 15,
+                      max(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) + 15),
             tickvals = seq(0, 300, 30),
             ticktext = seconds_to_string(seq(0, 300, 30), ms = FALSE)
           )
@@ -476,11 +506,13 @@ server <- function(input, output, session) {
       names(means) <- colnames(dat[, -c("date")])
 
       means$date <- dat[order(date), date]
+      
+      data.table::setDT(means)
+      
+      means_long <- data.table::melt(means, id.vars = "date",
+                                     variable.name = "name")
 
-      as.data.table(means) |>
-        tidyr::pivot_longer(
-          cols = -c("date")
-        ) |>
+      means_long |>
         plotly::plot_ly(
           x = ~date,
           y = ~value,
@@ -498,13 +530,15 @@ server <- function(input, output, session) {
             t = 50
           ),
           xaxis = list(
-            title = "Date"
+            title = "Date",
+            range = c(Sys.Date() - months(3), Sys.Date())
           ),
           yaxis = list(
             title = "Time",
-            # type = 'date',
-            tickvals = seq(0, 300, 30),
-            ticktext = seconds_to_string(seq(0, 300, 30), ms = FALSE)
+            range = c(min(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) - 15,
+                      max(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) + 15),
+            tickvals = seq(0, 300, 15),
+            ticktext = seconds_to_string(seq(0, 300, 15), ms = FALSE)
           )
         )
     }
@@ -515,6 +549,12 @@ server <- function(input, output, session) {
   output$stats_histogram <- plotly::renderPlotly(
     expr = {
       dat <- daily_results()
+      
+      formatted_ranges <- sapply(seq(0, 300, length.out = 30), function(x) {
+        start <- seconds_to_string(x, ms = FALSE)
+        end <- seconds_to_string(x + 20, ms = FALSE) # Adjust width based on bin size
+        paste0("(", start, " - ", end, ")")
+      })
 
       plotly::plot_ly(
         dat,
@@ -523,7 +563,7 @@ server <- function(input, output, session) {
         histnorm = "probability",
         color = ~player,
         nbinsx = 30,
-        hovertemplate = "%{y:.2%}"
+        hovertemplate = "(%{x} s) %{y:.2%}"
       ) |>
         plotly::layout(
           title = "Completion Time Histogram",
