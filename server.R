@@ -573,8 +573,8 @@ server <- function(input, output, session) {
           xaxis = list(
             title = "Time",
             range = c(0, 300),
-            tickvals = seq(30, 300, 15),
-            ticktext = seconds_to_string(seq(30, 300, 15), ms = FALSE)
+            tickvals = seq(20, 300, 20),
+            ticktext = seconds_to_string(seq(20, 300, 20), ms = FALSE)
           ),
           yaxis = list(
             tickformat = ".0%"
