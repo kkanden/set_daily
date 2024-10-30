@@ -4,11 +4,11 @@ server <- function(input, output, session) {
   shinytitle::change_window_title(
     title = "SET Tracking"
   )
-  
+
   shinytitle::busy_window_title(
     title = "SET Tracking"
   )
-  
+
   ### REACTIVE VALUES ----
 
   rv <- shiny::reactiveValues(
@@ -24,12 +24,16 @@ server <- function(input, output, session) {
     daily_results
   })
 
+  output$topn_header <- renderText({
+    paste0("Top ", input$topn_picker, " Best Times")
+  })
+
   ### MODALS ----
   # add record
   shiny::observeEvent(input$add_record_modal_bttn, {
     shiny::showModal(
       shiny::modalDialog(
-        footer = modalButton('Close'),
+        footer = modalButton("Close"),
         tags$head(
           tags$script(
             HTML(
@@ -87,7 +91,7 @@ server <- function(input, output, session) {
   shiny::observeEvent(input$remove_record_modal_bttn, {
     shiny::showModal(
       shiny::modalDialog(
-        footer = modalButton('Close'),
+        footer = modalButton("Close"),
         tags$head(
           tags$script(
             HTML(
@@ -298,7 +302,7 @@ server <- function(input, output, session) {
     expr = {
       dat <- daily_results()
 
-      dat <- dat[order(time_sec)][1:10, .(
+      dat <- dat[order(time_sec)][1:input$topn_picker, .(
         Player = player,
         Time = seconds_to_string(time_sec),
         Date = date
@@ -311,7 +315,6 @@ server <- function(input, output, session) {
         options = list(
           paging = FALSE,
           dom = "t",
-          scrollY = "600px",
           scrollCollapse = TRUE,
           scrollX = 200,
           FixedHeader = TRUE,
@@ -325,10 +328,10 @@ server <- function(input, output, session) {
       ) |>
         DT::formatStyle(
           columns = 0:ncol(dat),
-          target = "cell", 
+          target = "cell",
           color = JS("\"unset\""),
           backgroundColor = JS("\"unset\"")
-        ) |> 
+        ) |>
         DT::formatStyle(
           0,
           target = "row",
@@ -336,7 +339,7 @@ server <- function(input, output, session) {
             c(1, 2, 3),
             c("#FFD700", "#C0C0C0", "#CD7F32")
           )
-        ) |> 
+        ) |>
         DT::formatStyle(
           columns = colnames(dat),
           fontWeight = "bold"
@@ -378,11 +381,11 @@ server <- function(input, output, session) {
             )
           )
         )
-      ) |> 
-      DT::formatStyle(
-        columns = colnames(dat),
-        fontWeight = "bold"
-      )
+      ) |>
+        DT::formatStyle(
+          columns = colnames(dat),
+          fontWeight = "bold"
+        )
     }
   )
 
@@ -405,8 +408,8 @@ server <- function(input, output, session) {
       dat <- dat[full_dates, on = c("player", "date")][
         , ":="(cummean = data.table::nafill(cummean, type = "locf"))
       ]
-      
-      dat |> 
+
+      dat |>
         plotly::plot_ly(
           x = ~date,
           y = ~cummean,
@@ -429,8 +432,10 @@ server <- function(input, output, session) {
           ),
           yaxis = list(
             title = "Time",
-            range = c(min(dat[date %between% c(Sys.Date() - months(3), Sys.Date()), cummean]) - 15,
-                      max(dat[date %between% c(Sys.Date() - months(3), Sys.Date()), cummean]) + 15),
+            range = c(
+              min(dat[date %between% c(Sys.Date() - months(3), Sys.Date()), cummean]) - 15,
+              max(dat[date %between% c(Sys.Date() - months(3), Sys.Date()), cummean]) + 15
+            ),
             tickvals = seq(0, 300, 15),
             ticktext = seconds_to_string(seq(0, 300, 15), ms = FALSE)
           )
@@ -454,11 +459,13 @@ server <- function(input, output, session) {
       names(means) <- colnames(dat[, -c("date")])
 
       means$date <- dat[order(date), date]
-      
+
       data.table::setDT(means)
-      
-      means_long <- data.table::melt(means, id.vars = "date",
-                       variable.name = "name")
+
+      means_long <- data.table::melt(means,
+        id.vars = "date",
+        variable.name = "name"
+      )
 
       means_long |>
         plotly::plot_ly(
@@ -483,8 +490,10 @@ server <- function(input, output, session) {
           ),
           yaxis = list(
             title = "Time",
-            range = c(min(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) - 15,
-                      max(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) + 15),
+            range = c(
+              min(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) - 15,
+              max(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) + 15
+            ),
             tickvals = seq(0, 300, 30),
             ticktext = seconds_to_string(seq(0, 300, 30), ms = FALSE)
           )
@@ -506,11 +515,13 @@ server <- function(input, output, session) {
       names(means) <- colnames(dat[, -c("date")])
 
       means$date <- dat[order(date), date]
-      
+
       data.table::setDT(means)
-      
-      means_long <- data.table::melt(means, id.vars = "date",
-                                     variable.name = "name")
+
+      means_long <- data.table::melt(means,
+        id.vars = "date",
+        variable.name = "name"
+      )
 
       means_long |>
         plotly::plot_ly(
@@ -535,8 +546,10 @@ server <- function(input, output, session) {
           ),
           yaxis = list(
             title = "Time",
-            range = c(min(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) - 15,
-                      max(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) + 15),
+            range = c(
+              min(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) - 15,
+              max(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) + 15
+            ),
             tickvals = seq(0, 300, 15),
             ticktext = seconds_to_string(seq(0, 300, 15), ms = FALSE)
           )
@@ -549,7 +562,7 @@ server <- function(input, output, session) {
   output$stats_histogram <- plotly::renderPlotly(
     expr = {
       dat <- daily_results()
-      
+
       formatted_ranges <- sapply(seq(0, 300, length.out = 30), function(x) {
         start <- seconds_to_string(x, ms = FALSE)
         end <- seconds_to_string(x + 20, ms = FALSE) # Adjust width based on bin size
