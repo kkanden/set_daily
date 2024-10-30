@@ -2,11 +2,11 @@ ui <- bslib::page_navbar(
   theme = bs_theme(preset = "shiny"),
   title = HTML('<img src="set_logo.png" height=40> Tracking'),
   fillable = FALSE,
-  
+
   # BODY ----
-  
+
   header = {
-  # Custom CSS for sticky header
+    # Custom CSS for sticky header
     tags$head(
       tags$style(HTML("
       .bslib-page-navbar .navbar {
@@ -32,8 +32,16 @@ ui <- bslib::page_navbar(
       bslib::layout_columns(
         col_widths = 12,
         bslib::card(
-          bslib::card_header("Top 10 Best Times"),
+          bslib::card_header(textOutput("topn_header")),
           bslib::card_body(
+            shinyWidgets::pickerInput(
+              inputId = "topn_picker",
+              label = "Show Top",
+              choices = seq(10, 50, 10),
+              selected = 10,
+              width = "fit",
+              inline = TRUE
+            ),
             DT::DTOutput(outputId = "stats_top10")
           )
         ),
