@@ -21,7 +21,11 @@ server <- function(input, output, session) {
 
     data.table::setnames(daily_results, "name", "player")
 
-    daily_results
+    last_dates <- daily_results[, .(last_date = max(date)), by = .(player)]
+
+    daily_results <- daily_results[last_dates, on = "player"]
+    # filter out players who haven't played for 30 days
+    daily_results[last_date >= Sys.Date() - 30]
   })
 
   output$topn_header <- renderText({
