@@ -6,14 +6,19 @@ ui <- bslib::page_navbar(
     # BODY ----
 
     header = {
-        # Custom CSS for sticky header
+        # Custom CSS 
         tags$head(
             tags$style(HTML("
                 .bslib-page-navbar .navbar {
                 position: sticky;
                 top: 0;
                 z-index: 1000;
-                background-color: white; /* Change this to match your navbar color */
+                background-color: white; 
+                }
+
+                .card-header {
+                text-align: center;
+                font-weight: bold;
                 }
                 "))
         )
@@ -85,7 +90,7 @@ ui <- bslib::page_navbar(
                 ),
                 bslib::card(
                     full_screen = TRUE,
-                    bslib::card_header("Completion Time by Weekday"),
+                    bslib::card_header("Mean Completion Time by Day of Week"),
                     bslib::card_body(
                         plotly::plotlyOutput(outputId = "stats_weekdaybar")
                     )

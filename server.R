@@ -392,19 +392,22 @@ server <- function(input, output, session) {
     #### running avg all time ----
 
     output$stats_runavg_alltime <- plotly::renderPlotly({
-        all_dates <- seq(min(daily_results()[, date]), Sys.Date(), by = "days")
-        unique_players <- sort(unique(daily_results()[, player]))
+        min_date_by_player <- daily_results()[, .(
+            min_date = min(date)
+        ),
+            by = .(player)]
 
-        dat <- daily_results()[order(date)][, .(date, cummean = cumsum(time_sec) / seq_len(.N)),
-            by = .(player)
-            ]
+        full_dates_by_player <- min_date_by_player[, .(
+            date = seq(min_date, Sys.Date(), by = "days")
+        ),
+            by = .(player)]
 
-        full_dates <- data.table::data.table(
-            player = rep(unique_players, each = length(all_dates)),
-            date = rep(all_dates, length(unique_players))
-        )
+        dat <- daily_results()[order(date)][, .(
+            date, cummean = cumsum(time_sec) / seq_len(.N)
+        ),
+            by = .(player)]
 
-        dat <- dat[full_dates, on = c("player", "date")][
+        dat <- dat[full_dates_by_player, on = c("player", "date")][
             , ":="(cummean = data.table::nafill(cummean, type = "locf"))
             ]
 
@@ -420,30 +423,33 @@ server <- function(input, output, session) {
                 hovertemplate = "%{text}"
             ) |>
             plotly::layout(
-                title = HTML("Cumulative average all time"),
+                title = NA,
                 hovermode = "x unified",
                 margin = list(
-                    t = 50
+                    t = 0
                 ),
                 xaxis = list(
-                    title = "Date",
+                    title = NA,
                     range = c(Sys.Date() - months(3), Sys.Date())
                 ),
                 yaxis = list(
-                    title = "Time",
+                    title = NA,
                     range = c(
                         min(dat[date %between% c(Sys.Date() - months(3), Sys.Date()), cummean]) - 15,
                         max(dat[date %between% c(Sys.Date() - months(3), Sys.Date()), cummean]) + 15
                     ),
                     tickvals = seq(0, 300, 15),
                     ticktext = seconds_to_string(seq(0, 300, 15), ms = FALSE)
+                ),
+                legend = list(
+                    orientation = "h"
                 )
             )
     })
 
 
 
-    #### running avg 7 day  ----
+    #### rolling avg 7 day  ----
 
     output$stats_runavg_7day <- plotly::renderPlotly({
         dat <- data.table::dcast(daily_results(),
@@ -476,28 +482,31 @@ server <- function(input, output, session) {
                 hovertemplate = "%{text}"
             ) |>
             plotly::layout(
-                title = "Rolling average (7 day)",
+                title = NA,
                 hovermode = "x unified",
                 margin = list(
-                    t = 50
+                    t = 0
                 ),
                 xaxis = list(
-                    title = "Date",
+                    title = NA,
                     range = c(Sys.Date() - months(3), Sys.Date())
                 ),
                 yaxis = list(
-                    title = "Time",
+                    title = NA,
                     range = c(
                         min(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) - 15,
                         max(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) + 15
                     ),
                     tickvals = seq(0, 300, 30),
                     ticktext = seconds_to_string(seq(0, 300, 30), ms = FALSE)
+                ),
+                legend = list(
+                    orientation = "h"
                 )
             )
     })
 
-    #### running avg 30 day  ----
+    #### rolling avg 30 day  ----
 
     output$stats_runavg_30day <- plotly::renderPlotly({
         dat <- data.table::dcast(daily_results(),
@@ -530,23 +539,26 @@ server <- function(input, output, session) {
                 hovertemplate = "%{text}"
             ) |>
             plotly::layout(
-                title = "Rolling average (30 day)",
+                title = NA,
                 hovermode = "x unified",
                 margin = list(
-                    t = 50
+                    t = 0
                 ),
                 xaxis = list(
-                    title = "Date",
+                    title = NA,
                     range = c(Sys.Date() - months(3), Sys.Date())
                 ),
                 yaxis = list(
-                    title = "Time",
+                    title = NA,
                     range = c(
                         min(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) - 15,
                         max(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) + 15
                     ),
                     tickvals = seq(0, 300, 15),
                     ticktext = seconds_to_string(seq(0, 300, 15), ms = FALSE)
+                ),
+                legend = list(
+                    orientation = "h"
                 )
             )
     })
@@ -572,18 +584,22 @@ server <- function(input, output, session) {
             hovertemplate = "(%{x} s) %{y:.2%}"
         ) |>
             plotly::layout(
-                title = "Completion Time Histogram",
+                title = NA,
                 margin = list(
-                    t = 50
+                    t = 0
                 ),
                 xaxis = list(
-                    title = "Time",
+                    title = NA,
                     range = c(0, 300),
                     tickvals = seq(20, 300, 20),
                     ticktext = seconds_to_string(seq(20, 300, 20), ms = FALSE)
                 ),
                 yaxis = list(
+                    title = NA,
                     tickformat = ".0%"
+                ),
+                legend = list(
+                    orientation = "h"
                 )
             )
     })
@@ -614,17 +630,20 @@ server <- function(input, output, session) {
             hovertemplate = "%{text}"
         ) |>
             plotly::layout(
-                title = "Mean time by weekday",
+                title = NA,
                 margin = list(
-                    t = 50
+                    t = 0
                 ),
                 xaxis = list(
-                    title = "Day of Week"
+                    title = NA
                 ),
                 yaxis = list(
-                    title = "Time",
+                    title = NA,
                     tickvals = seq(0, 300, 30),
                     ticktext = seconds_to_string(seq(0, 300, 30), ms = FALSE)
+                ),
+                legend = list(
+                    orientation = "h"
                 )
             )
     })
