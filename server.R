@@ -353,12 +353,12 @@ server <- function(input, output, session) {
     #### best, mean time by player ----
 
     output$stats_besttimeplayer <- DT::renderDT({
-        dat <- daily_results()
 
-        dat <- dat[, .(
+        dat <- daily_results()[, .(
             `Best Time` = seconds_to_string(min(time_sec)),
             `Mean Time` = seconds_to_string(mean(time_sec)),
             `Median Time` = seconds_to_string(median(time_sec)),
+            `Standard Deviation` = seconds_to_string(sd(time_sec)),
             `Daily Sets Completed` = .N
         ),
             by = .(Player = player)
