@@ -1,19 +1,13 @@
 # sql
 library(DBI)
-library(odbc)
 # data manipulation
 library(data.table)
 library(stringi)
-library(dplyr)
-library(tidyr)
 # shiny
 library(DT)
 library(shiny)
-library(shinydashboard)
-library(shinydashboardPlus)
 library(shinyWidgets)
 library(shinyalert)
-library(shinyBS)
 library(bslib)
 library(bsicons)
 library(plotly)
