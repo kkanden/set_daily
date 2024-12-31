@@ -411,8 +411,8 @@ server <- function(input, output, session) {
       , ":="(cummean = data.table::nafill(cummean, type = "locf"))
       ]
 
-    min_time <- min(dat[date %between% c(Sys.Date() - months(3), Sys.Date()), cummean]) - 15
-    max_time <- max(dat[date %between% c(Sys.Date() - months(3), Sys.Date()), cummean]) + 15
+    min_time <- min(dat[date %between% c(Sys.Date() - 90, Sys.Date()), cummean]) - 15
+    max_time <- max(dat[date %between% c(Sys.Date() - 90, Sys.Date()), cummean]) + 15
     dat |>
       plotly::plot_ly(
         x = ~date,
@@ -432,7 +432,7 @@ server <- function(input, output, session) {
         ),
         xaxis = list(
           title = NA,
-          range = c(Sys.Date() - months(3), Sys.Date())
+          range = c(Sys.Date() - 90, Sys.Date())
         ),
         yaxis = list(
           title = NA,
@@ -469,8 +469,8 @@ server <- function(input, output, session) {
       variable.name = "name"
     )
 
-    min_time <- min(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) - 15
-    max_time <- max(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) + 15
+    min_time <- min(means_long[date %between% c(Sys.Date() - 90, Sys.Date()), value], na.rm = TRUE) - 15
+    max_time <- max(means_long[date %between% c(Sys.Date() - 90, Sys.Date()), value], na.rm = TRUE) + 15
 
     means_long |>
       plotly::plot_ly(
@@ -491,7 +491,7 @@ server <- function(input, output, session) {
         ),
         xaxis = list(
           title = NA,
-          range = c(Sys.Date() - months(3), Sys.Date())
+          range = c(Sys.Date() - 90, Sys.Date())
         ),
         yaxis = list(
           title = NA,
@@ -526,8 +526,8 @@ server <- function(input, output, session) {
       variable.name = "name"
     )
 
-    min_time <- min(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) - 15
-    max_time <- max(means_long[date %between% c(Sys.Date() - months(3), Sys.Date()), value], na.rm = TRUE) + 15
+    min_time <- min(means_long[date %between% c(Sys.Date() - 90, Sys.Date()), value], na.rm = TRUE) - 15
+    max_time <- max(means_long[date %between% c(Sys.Date() - 90, Sys.Date()), value], na.rm = TRUE) + 15
 
     means_long |>
       plotly::plot_ly(
@@ -548,7 +548,7 @@ server <- function(input, output, session) {
         ),
         xaxis = list(
           title = NA,
-          range = c(Sys.Date() - months(3), Sys.Date())
+          range = c(Sys.Date() - 90, Sys.Date())
         ),
         yaxis = list(
           title = NA,
