@@ -75,7 +75,7 @@ server <- function(input, output, session) {
         ),
         shiny::textInput(
           inputId = "add_record_time",
-          label = "Input time [mm:ss(.sss)]",
+          label = "Input time [min:sec(.msec)]",
         ),
         shiny::br(),
         shiny::div(
@@ -218,7 +218,7 @@ server <- function(input, output, session) {
     }
 
     # check if time is of correct format
-    if (!stringi::stri_detect(time_input, regex = "^[0-9]+:[0-9]{1,2}(\\.[0-9]{1,3})?$") ||
+    if (!stringi::stri_detect(time_input, regex = "^[0-9]+:(?:[0-5][0-9]|[0-9])(?:\\.[0-9]{1,3})?$") ||
       time_input == "") {
       shinyalert::shinyalert(
         text = "Time not provided or time is not in the correct format.
