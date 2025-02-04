@@ -17,7 +17,10 @@ server <- function(input, output, session) {
   )
 
   daily_results <- reactive({
-    daily_results <- rv$players[rv$completion_times, on = c(player_id = "player_id")]
+    daily_results <- rv$players[
+      rv$completion_times,
+      on = c(player_id = "player_id")
+    ]
 
     data.table::setnames(daily_results, "name", "player")
 
@@ -160,14 +163,11 @@ server <- function(input, output, session) {
       date = rep(all_dates, length(unique_players))
     )
 
-    dat <- dat[full_dates, on = c("player", "date")][
-      , ":="(time_sec = seconds_to_string(time_sec))
-      ]
+    dat <- dat[full_dates, on = c("player", "date")][,
+      ":="(time_sec = seconds_to_string(time_sec))
+    ]
 
-    dat <- data.table::dcast(dat,
-      date ~ player,
-      value.var = "time_sec"
-    )
+    dat <- data.table::dcast(dat, date ~ player, value.var = "time_sec")
 
     data.table::setnames(dat, "date", "Date")
 
@@ -203,13 +203,16 @@ server <- function(input, output, session) {
       return()
     }
 
-    existing_record <- daily_results()[date == date_input & player == player_input]
+    existing_record <- daily_results()[
+      date == date_input & player == player_input
+    ]
     # check if player already has record with that date
     if (nrow(existing_record) > 0) {
       shinyalert::shinyalert(
         text = sprintf(
           "%s already has a record on %s",
-          player_input, date_input
+          player_input,
+          date_input
         ),
         type = "error",
         timer = 5000
@@ -218,8 +221,13 @@ server <- function(input, output, session) {
     }
 
     # check if time is of correct format
-    if (!stringi::stri_detect(time_input, regex = "^[0-9]+:(?:[0-5][0-9]|[0-9])(?:\\.[0-9]{1,3})?$") ||
-      time_input == "") {
+    if (
+      !stringi::stri_detect(
+        time_input,
+        regex = "^[0-9]+:(?:[0-5][0-9]|[0-9])(?:\\.[0-9]{1,3})?$"
+      ) ||
+        time_input == ""
+    ) {
       shinyalert::shinyalert(
         text = "Time not provided or time is not in the correct format.
         Examples of correct format:\n
@@ -236,15 +244,20 @@ server <- function(input, output, session) {
     time_sec <- string_to_seconds(time_input)
     player_id <- rv$players[name == player_input, player_id]
 
-    query <- glue::glue('INSERT INTO completion_times("date", "time_sec", "player_id")
-      VALUES (\'{date_input}\', {time_sec}, {player_id})')
+    query <- glue::glue(
+      'INSERT INTO completion_times("date", "time_sec", "player_id")
+      VALUES (\'{date_input}\', {time_sec}, {player_id})'
+    )
 
     con <- connect()
 
     sent <- DBI::dbSendQuery(con, query)
     DBI::dbClearResult(sent)
 
-    rv$completion_times <- DBI::dbGetQuery(con, "SELECT * FROM completion_times") |>
+    rv$completion_times <- DBI::dbGetQuery(
+      con,
+      "SELECT * FROM completion_times"
+    ) |>
       data.table::as.data.table()
 
     disconnect(con)
@@ -272,18 +285,23 @@ server <- function(input, output, session) {
         timer = 5000
       )
       return()
-    }  
+    }
     player_id_input <- rv$players[name == player_input, player_id]
 
-    query <- glue::glue("DELETE FROM completion_times WHERE date = '{date_input}'
-      AND player_id = {player_id_input}")
+    query <- glue::glue(
+      "DELETE FROM completion_times WHERE date = '{date_input}'
+      AND player_id = {player_id_input}"
+    )
 
     con <- connect()
 
     sent <- DBI::dbSendQuery(con, query)
     DBI::dbClearResult(sent)
 
-    rv$completion_times <- DBI::dbGetQuery(con, "SELECT * FROM completion_times") |>
+    rv$completion_times <- DBI::dbGetQuery(
+      con,
+      "SELECT * FROM completion_times"
+    ) |>
       data.table::as.data.table()
 
     disconnect(con)
@@ -295,7 +313,6 @@ server <- function(input, output, session) {
       type = "success",
       timer = 2000
     )
-
   })
 
   ### STATS ----
@@ -305,11 +322,14 @@ server <- function(input, output, session) {
   output$stats_top10 <- DT::renderDT({
     dat <- daily_results()
 
-    dat <- dat[order(time_sec)][1:input$topn_picker, .(
-      Player = player,
-      Time = seconds_to_string(time_sec),
-      Date = date
-    )]
+    dat <- dat[order(time_sec)][
+      1:input$topn_picker,
+      .(
+        Player = player,
+        Time = seconds_to_string(time_sec),
+        Date = date
+      )
+    ]
 
     DT::datatable(
       data = dat,
@@ -349,20 +369,19 @@ server <- function(input, output, session) {
       )
   })
 
-
   #### best, mean time by player ----
 
   output$stats_besttimeplayer <- DT::renderDT({
-
-    dat <- daily_results()[, .(
-      `Best Time` = seconds_to_string(min(time_sec)),
-      `Mean Time` = seconds_to_string(mean(time_sec)),
-      `Median Time` = seconds_to_string(median(time_sec)),
-      `Standard Deviation` = seconds_to_string(sd(time_sec)),
-      `Daily Sets Completed` = .N
-    ),
+    dat <- daily_results()[,
+      .(
+        `Best Time` = seconds_to_string(min(time_sec)),
+        `Mean Time` = seconds_to_string(mean(time_sec)),
+        `Median Time` = seconds_to_string(median(time_sec)),
+        `Standard Deviation` = seconds_to_string(sd(time_sec)),
+        `Daily Sets Completed` = .N
+      ),
       by = .(Player = player)
-      ][order(Player)]
+    ][order(Player)]
 
     DT::datatable(
       data = dat,
@@ -392,33 +411,46 @@ server <- function(input, output, session) {
   #### running avg all time ----
 
   output$stats_runavg_alltime <- plotly::renderPlotly({
-    min_date_by_player <- daily_results()[, .(
-      min_date = min(date)
-    ),
-      by = .(player)]
+    min_date_by_player <- daily_results()[,
+      .(
+        min_date = min(date)
+      ),
+      by = .(player)
+    ]
 
-    full_dates_by_player <- min_date_by_player[, .(
-      date = seq(min_date, Sys.Date(), by = "days")
-    ),
-      by = .(player)]
+    full_dates_by_player <- min_date_by_player[,
+      .(
+        date = seq(min_date, Sys.Date(), by = "days")
+      ),
+      by = .(player)
+    ]
 
-    dat <- daily_results()[order(date)][, .(
-      date, cummean = cumsum(time_sec) / seq_len(.N)
-    ),
-      by = .(player)]
+    dat <- daily_results()[order(date)][,
+      .(
+        date,
+        cummean = cumsum(time_sec) / seq_len(.N)
+      ),
+      by = .(player)
+    ]
 
-    dat <- dat[full_dates_by_player, on = c("player", "date")][
-      , ":="(cummean = data.table::nafill(cummean, type = "locf"))
-      ]
+    dat <- dat[full_dates_by_player, on = c("player", "date")][,
+      ":="(cummean = data.table::nafill(cummean, type = "locf"))
+    ]
 
-    min_time <- min(dat[date %between% c(Sys.Date() - 90, Sys.Date()), cummean]) - 15
-    max_time <- max(dat[date %between% c(Sys.Date() - 90, Sys.Date()), cummean]) + 15
+    min_time <- min(
+      dat[date %between% c(Sys.Date() - 90, Sys.Date()), cummean]
+    ) -
+      15
+    max_time <- max(
+      dat[date %between% c(Sys.Date() - 90, Sys.Date()), cummean]
+    ) +
+      15
     dat |>
       plotly::plot_ly(
         x = ~date,
         y = ~cummean,
         color = ~player,
-        text = ~ seconds_to_string(cummean),
+        text = ~seconds_to_string(cummean),
         type = "scatter",
         mode = "lines",
         hoverinfo = "text",
@@ -446,12 +478,11 @@ server <- function(input, output, session) {
       )
   })
 
-
-
   #### rolling avg 7 day  ----
 
   output$stats_runavg_7day <- plotly::renderPlotly({
-    dat <- data.table::dcast(daily_results(),
+    dat <- data.table::dcast(
+      daily_results(),
       date ~ player,
       value.var = "time_sec"
     )
@@ -464,13 +495,22 @@ server <- function(input, output, session) {
 
     data.table::setDT(means)
 
-    means_long <- data.table::melt(means,
+    means_long <- data.table::melt(
+      means,
       id.vars = "date",
       variable.name = "name"
     )
 
-    min_time <- min(means_long[date %between% c(Sys.Date() - 90, Sys.Date()), value], na.rm = TRUE) - 15
-    max_time <- max(means_long[date %between% c(Sys.Date() - 90, Sys.Date()), value], na.rm = TRUE) + 15
+    min_time <- min(
+      means_long[date %between% c(Sys.Date() - 90, Sys.Date()), value],
+      na.rm = TRUE
+    ) -
+      15
+    max_time <- max(
+      means_long[date %between% c(Sys.Date() - 90, Sys.Date()), value],
+      na.rm = TRUE
+    ) +
+      15
 
     means_long |>
       plotly::plot_ly(
@@ -479,7 +519,7 @@ server <- function(input, output, session) {
         type = "scatter",
         mode = "lines",
         color = ~name,
-        text = ~ seconds_to_string(value),
+        text = ~seconds_to_string(value),
         hoverinfo = "text",
         hovertemplate = "%{text}"
       ) |>
@@ -508,7 +548,8 @@ server <- function(input, output, session) {
   #### rolling avg 30 day  ----
 
   output$stats_runavg_30day <- plotly::renderPlotly({
-    dat <- data.table::dcast(daily_results(),
+    dat <- data.table::dcast(
+      daily_results(),
       date ~ player,
       value.var = "time_sec"
     )
@@ -521,13 +562,22 @@ server <- function(input, output, session) {
 
     data.table::setDT(means)
 
-    means_long <- data.table::melt(means,
+    means_long <- data.table::melt(
+      means,
       id.vars = "date",
       variable.name = "name"
     )
 
-    min_time <- min(means_long[date %between% c(Sys.Date() - 90, Sys.Date()), value], na.rm = TRUE) - 15
-    max_time <- max(means_long[date %between% c(Sys.Date() - 90, Sys.Date()), value], na.rm = TRUE) + 15
+    min_time <- min(
+      means_long[date %between% c(Sys.Date() - 90, Sys.Date()), value],
+      na.rm = TRUE
+    ) -
+      15
+    max_time <- max(
+      means_long[date %between% c(Sys.Date() - 90, Sys.Date()), value],
+      na.rm = TRUE
+    ) +
+      15
 
     means_long |>
       plotly::plot_ly(
@@ -536,7 +586,7 @@ server <- function(input, output, session) {
         type = "scatter",
         mode = "lines",
         color = ~name,
-        text = ~ seconds_to_string(value),
+        text = ~seconds_to_string(value),
         hoverinfo = "text",
         hovertemplate = "%{text}"
       ) |>
@@ -608,15 +658,24 @@ server <- function(input, output, session) {
   output$stats_weekdaybar <- plotly::renderPlotly({
     dat <- daily_results()
 
-    dat <- dat[, .(mean_time = mean(time_sec)),
+    dat <- dat[,
+      .(mean_time = mean(time_sec)),
       by = .(
-        day_of_week = factor(weekdays(date), levels = c(
-          "Monday", "Tuesday", "Wednesday", "Thursday",
-          "Friday", "Saturday", "Sunday"
-        )),
+        day_of_week = factor(
+          weekdays(date),
+          levels = c(
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday"
+          )
+        ),
         player
       )
-      ]
+    ]
 
     max_time <- max(dat[, mean_time], na.rm = TRUE) + 15
 
@@ -626,7 +685,7 @@ server <- function(input, output, session) {
       y = ~mean_time,
       type = "bar",
       color = ~player,
-      text = ~ seconds_to_string(mean_time),
+      text = ~seconds_to_string(mean_time),
       hoverinfo = "text",
       hovertemplate = "%{text}"
     ) |>
