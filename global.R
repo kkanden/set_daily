@@ -1,5 +1,7 @@
 # sql
 library(DBI)
+library(config)
+library(RPostgres)
 # data manipulation
 library(data.table)
 library(stringi)
