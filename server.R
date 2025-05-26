@@ -21,14 +21,20 @@ server <- function(input, output, session) {
       rv$completion_times,
       on = c(player_id = "player_id")
     ]
-
     data.table::setnames(daily_results, "name", "player")
+    daily_results
+  })
 
-    last_dates <- daily_results[, .(last_date = max(date)), by = .(player)]
-
-    daily_results <- daily_results[last_dates, on = "player"]
+  daily_results_30days <- reactive({
+    req(daily_results)
+    last_dates <- daily_results()[, .(last_date = max(date)), by = .(player)]
+    daily_results_last_date <- daily_results()[last_dates, on = "player"]
     # filter out players who haven't played for 30 days
-    daily_results[last_date >= Sys.Date() - 30]
+    dt <- daily_results_last_date[last_date >= Sys.Date() - 30]
+    if (nrow(dt) == 0) {
+      return(daily_results())
+    }
+    dt
   })
 
   output$topn_header <- renderText({
@@ -153,10 +159,14 @@ server <- function(input, output, session) {
   #### table ----
 
   output$daily_results_table <- DT::renderDT({
-    all_dates <- seq(min(daily_results()[, date]), Sys.Date(), by = "days")
-    unique_players <- sort(unique(daily_results()[, player]))
+    all_dates <- seq(
+      min(daily_results_30days()[, date]),
+      Sys.Date(),
+      by = "days"
+    )
+    unique_players <- sort(unique(daily_results_30days()[, player]))
 
-    dat <- daily_results()[order(date)]
+    dat <- daily_results_30days()[order(date)]
 
     full_dates <- data.table::data.table(
       player = rep(unique_players, each = length(all_dates)),
@@ -372,7 +382,7 @@ server <- function(input, output, session) {
   #### best, mean time by player ----
 
   output$stats_besttimeplayer <- DT::renderDT({
-    dat <- daily_results()[,
+    dat <- daily_results_30days()[,
       .(
         `Best Time` = seconds_to_string(min(time_sec)),
         `Mean Time` = seconds_to_string(mean(time_sec)),
@@ -411,7 +421,7 @@ server <- function(input, output, session) {
   #### running avg all time ----
 
   output$stats_runavg_alltime <- plotly::renderPlotly({
-    min_date_by_player <- daily_results()[,
+    min_date_by_player <- daily_results_30days()[,
       .(
         min_date = min(date)
       ),
@@ -425,7 +435,7 @@ server <- function(input, output, session) {
       by = .(player)
     ]
 
-    dat <- daily_results()[order(date)][,
+    dat <- daily_results_30days()[order(date)][,
       .(
         date,
         cummean = cumsum(time_sec) / seq_len(.N)
@@ -450,7 +460,7 @@ server <- function(input, output, session) {
         x = ~date,
         y = ~cummean,
         color = ~player,
-        text = ~seconds_to_string(cummean),
+        text = ~ seconds_to_string(cummean),
         type = "scatter",
         mode = "lines",
         hoverinfo = "text",
@@ -482,7 +492,7 @@ server <- function(input, output, session) {
 
   output$stats_runavg_7day <- plotly::renderPlotly({
     dat <- data.table::dcast(
-      daily_results(),
+      daily_results_30days(),
       date ~ player,
       value.var = "time_sec"
     )
@@ -519,7 +529,7 @@ server <- function(input, output, session) {
         type = "scatter",
         mode = "lines",
         color = ~name,
-        text = ~seconds_to_string(value),
+        text = ~ seconds_to_string(value),
         hoverinfo = "text",
         hovertemplate = "%{text}"
       ) |>
@@ -549,7 +559,7 @@ server <- function(input, output, session) {
 
   output$stats_runavg_30day <- plotly::renderPlotly({
     dat <- data.table::dcast(
-      daily_results(),
+      daily_results_30days(),
       date ~ player,
       value.var = "time_sec"
     )
@@ -586,7 +596,7 @@ server <- function(input, output, session) {
         type = "scatter",
         mode = "lines",
         color = ~name,
-        text = ~seconds_to_string(value),
+        text = ~ seconds_to_string(value),
         hoverinfo = "text",
         hovertemplate = "%{text}"
       ) |>
@@ -615,7 +625,7 @@ server <- function(input, output, session) {
   #### histogram  ----
 
   output$stats_histogram <- plotly::renderPlotly({
-    dat <- daily_results()
+    dat <- daily_results_30days()
 
     formatted_ranges <- sapply(seq(0, 300, length.out = 30), function(x) {
       start <- seconds_to_string(x, ms = FALSE)
@@ -656,7 +666,7 @@ server <- function(input, output, session) {
   #### weekday bar  ----
 
   output$stats_weekdaybar <- plotly::renderPlotly({
-    dat <- daily_results()
+    dat <- daily_results_30days()
 
     dat <- dat[,
       .(mean_time = mean(time_sec)),
@@ -685,7 +695,7 @@ server <- function(input, output, session) {
       y = ~mean_time,
       type = "bar",
       color = ~player,
-      text = ~seconds_to_string(mean_time),
+      text = ~ seconds_to_string(mean_time),
       hoverinfo = "text",
       hovertemplate = "%{text}"
     ) |>
